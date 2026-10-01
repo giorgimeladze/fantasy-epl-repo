@@ -1,0 +1,11 @@
+{
+  "id": 123456,
+  "name": "Mock Mid Table FC",
+  "player_first_name": "Test",
+  "player_last_name": "Manager",
+  "summary_overall_points": 134,
+  "summary_overall_rank": 250000,
+  "summary_event_points": 60,
+  "current_event": 2,
+  "started_event": 1
+}

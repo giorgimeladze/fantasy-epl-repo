@@ -1,0 +1,8 @@
+{
+  "spec": ["test/**/*.test.ts"],
+  "require": ["test/setup.ts"],
+  "node-option": ["import=tsx", "disable-warning=ExperimentalWarning"],
+  "extension": ["ts"],
+  "timeout": 5000,
+  "reporter": "spec"
+}

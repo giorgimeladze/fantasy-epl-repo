@@ -1,0 +1,113 @@
+import assert from 'node:assert/strict';
+import request from 'supertest';
+import { createApp } from '../src/app.js';
+import { teamCacheRepository } from '../src/db/teamCacheRepository.js';
+import { type FplApiMock, mockFplApi } from './helpers/mockFplApi.js';
+
+const app = createApp();
+
+async function login(): Promise<string> {
+  const res = await request(app).post('/api/auth/login').send({ username: 'admin', password: 'Qwerty12!' });
+  assert.equal(res.status, 200);
+  return res.body.token as string;
+}
+
+describe('HTTP routes', () => {
+  let fpl: FplApiMock;
+
+  beforeEach(() => {
+    teamCacheRepository().clear();
+    fpl = mockFplApi();
+  });
+
+  afterEach(() => fpl.restore());
+
+  it('GET /api/health', async () => {
+    const res = await request(app).get('/api/health');
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, { status: 'ok' });
+  });
+
+  describe('POST /api/auth/login', () => {
+    it('returns a token for valid credentials', async () => {
+      const res = await request(app).post('/api/auth/login').send({ username: 'admin', password: 'Qwerty12!' });
+      assert.equal(res.status, 200);
+      assert.equal(typeof res.body.token, 'string');
+      assert.equal(res.body.username, 'admin');
+    });
+
+    it('returns 401 for invalid credentials', async () => {
+      const res = await request(app).post('/api/auth/login').send({ username: 'admin', password: 'nope' });
+      assert.equal(res.status, 401);
+      assert.equal(res.body.error, 'Invalid username or password');
+    });
+
+    it('returns 400 when fields are missing', async () => {
+      const res = await request(app).post('/api/auth/login').send({ username: 'admin' });
+      assert.equal(res.status, 400);
+    });
+  });
+
+  describe('GET /api/team', () => {
+    it('requires authentication', async () => {
+      const res = await request(app).get('/api/team');
+      assert.equal(res.status, 401);
+      assert.deepEqual(fpl.calls, []);
+    });
+
+    it('rejects an invalid token', async () => {
+      const res = await request(app).get('/api/team').set('Authorization', 'Bearer nope');
+      assert.equal(res.status, 401);
+    });
+
+    it('returns the team, then serves it from the cache', async () => {
+      const token = await login();
+
+      const first = await request(app).get('/api/team').set('Authorization', `Bearer ${token}`);
+      assert.equal(first.status, 200);
+      assert.equal(first.body.players.length, 15);
+      assert.equal(first.body.manager.teamName, 'Mock Mid Table FC');
+      assert.equal(first.body.cache.fromCache, false);
+
+      fpl.calls.length = 0;
+      const second = await request(app).get('/api/team').set('Authorization', `Bearer ${token}`);
+      assert.equal(second.body.cache.fromCache, true);
+      assert.deepEqual(fpl.calls, []);
+    });
+
+    it('?refresh=true bypasses the cache', async () => {
+      const token = await login();
+      await request(app).get('/api/team').set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app).get('/api/team?refresh=true').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.cache.fromCache, false);
+    });
+
+    it('passes FPL outages through as JSON errors', async () => {
+      fpl.restore();
+      fpl = mockFplApi({ '/bootstrap-static/': { status: 503 } });
+      const token = await login();
+
+      const res = await request(app).get('/api/team').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 503);
+      assert.match(res.body.error, /updating/);
+    });
+  });
+
+  it('POST /api/auth/logout invalidates the token', async () => {
+    const token = await login();
+
+    const logout = await request(app).post('/api/auth/logout').set('Authorization', `Bearer ${token}`);
+    assert.equal(logout.status, 204);
+
+    const res = await request(app).get('/api/auth/session').set('Authorization', `Bearer ${token}`);
+    assert.equal(res.status, 401);
+  });
+
+  it('returns JSON 404 for unknown API routes', async () => {
+    const res = await request(app).get('/api/nope');
+    assert.equal(res.status, 404);
+    assert.deepEqual(res.body, { error: 'Not found' });
+  });
+});
