@@ -187,7 +187,7 @@ export const teamService = {
     { forceRefresh = false }: GetMyTeamOptions = {},
   ): Promise<MyTeamResponse> {
     if (!teamId) {
-      throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env or server/src/config.ts.');
+      throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env.');
     }
 
     const ttl = config.db.teamCacheTtlMs;

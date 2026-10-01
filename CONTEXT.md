@@ -38,12 +38,12 @@ For every GW since the manager joined, take that GW's picks, apply autosubs and 
 
 Two layers on the server:
 
-1. **SQLite team cache** (`team_cache` table, `server/data/fpl.sqlite`): the fully assembled team for a team ID is stored with its fetch time. Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (the dashboard's Refresh button) bypasses it. Failed fetches are never cached.
+1. **SQLite team cache** (`team_cache` table, `app/server/data/fpl.sqlite`): the fully assembled team for a team ID is stored with its fetch time. Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (the dashboard's Refresh button) bypasses it. Failed fetches are never cached.
 2. **In-memory FPL response cache** (`fplClient`): finished-gameweek picks/live data for 24 h, everything else for 2 minutes. Speeds up a refetch (only the current gameweek is re-downloaded in practice) and is lost on restart.
 
 ## Testing approach
 
-Mocha specs under `server/test/`. The FPL API is never called: `mockFplApi()` swaps global `fetch` for a router that serves JSON from `server/test/mocks/fpl/`. The mock season (team `123456`) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `teamService.test.ts`. SQLite runs in-memory (`DATABASE_PATH=:memory:`).
+Mocha specs under `app/server/test/`. The FPL API is never called: `mockFplApi()` swaps global `fetch` for a router that serves JSON from `app/server/test/mocks/fpl/`. The mock season (team `123456`) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `teamService.test.ts`. SQLite runs in-memory (`DATABASE_PATH=:memory:`).
 
 ## Security posture
 

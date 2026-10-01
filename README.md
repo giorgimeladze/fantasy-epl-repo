@@ -2,8 +2,8 @@
 
 A personal Fantasy Premier League dashboard. Sign in, then see your current 15-man squad: starting XI on a pitch, bench, form, upcoming fixtures with difficulty ratings, and how many points each player has earned **for you** this season.
 
-- **server/** — Node.js 22 + TypeScript + Express 5 API that proxies the public FPL API and caches your team in SQLite for 30 minutes
-- **client/** — React 19 + TypeScript + Vite single-page app
+- **app/server/** — Node.js 22 + TypeScript + Express 5 API that proxies the public FPL API and caches your team in SQLite for 30 minutes
+- **app/client/** — React 19 + TypeScript + Vite single-page app
 
 ## Running locally
 
@@ -14,7 +14,7 @@ A personal Fantasy Premier League dashboard. Sign in, then see your current 15-m
 
 ### 2. Install
 
-From the repo root (this installs both `server/` and `client/`):
+From the repo root (this installs both `app/server/` and `app/client/`):
 
 ```bash
 npm install
@@ -40,7 +40,7 @@ FPL_TEAM_ID=1234567
 | `ADMIN_PASSWORD` | – (required) | Dashboard login password |
 | `FPL_TEAM_ID` | – (required) | Your FPL team |
 | `PORT` | `3001` | API port |
-| `DATABASE_PATH` | `server/data/fpl.sqlite` | SQLite file. It is created automatically on first run. |
+| `DATABASE_PATH` | `app/server/data/fpl.sqlite` | SQLite file. It is created automatically on first run. |
 
 ### 4. Start
 
@@ -68,16 +68,16 @@ The first time your team loads, the server fetches it from the FPL API and store
 
 - The dashboard shows when the data was fetched and whether it came from the cache.
 - The **Refresh** button skips the cache (`GET /api/team?refresh=true`) and saves fresh data.
-- To wipe the cache, stop the server and delete `server/data/`.
-- To change the 30-minute TTL, edit `config.db.teamCacheTtlMs` in [`server/src/config.ts`](server/src/config.ts).
+- To wipe the cache, stop the server and delete `app/server/data/`.
+- To change the 30-minute TTL, edit `config.db.teamCacheTtlMs` in [`app/server/src/config.ts`](app/server/src/config.ts).
 
 ## Tests
 
-Server tests use **Mocha**, with `node:assert` for assertions and `supertest` for HTTP routes. They never call the real FPL API. `fetch` is stubbed to return mocked responses from [`server/test/mocks/fpl/`](server/test/mocks/fpl/), and the database is in-memory SQLite.
+Server tests use **Mocha**, with `node:assert` for assertions and `supertest` for HTTP routes. They never call the real FPL API. `fetch` is stubbed to return mocked responses from [`app/server/test/mocks/fpl/`](app/server/test/mocks/fpl/), and the database is in-memory SQLite.
 
 ```bash
 npm test                         # all server tests
-npm run test:watch -w server     # re-run on change
+npm run test:watch -w app/server     # re-run on change
 ```
 
 | File | Covers |
@@ -95,7 +95,7 @@ The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: 
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | API and client in watch mode |
-| `npm run build` | Compiles the server to `server/dist` and builds the client to `client/dist` |
+| `npm run build` | Compiles the server to `app/server/dist` and builds the client to `app/client/dist` |
 | `npm start` | Runs the built server, which also serves the built client |
 | `npm test` | Mocha test suite (server) |
 | `npm run typecheck` | Type-checks server, tests and client |
@@ -118,13 +118,13 @@ The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: 
 | "FPL_TEAM_ID is not configured" | Set `FPL_TEAM_ID` in `.env` and restart `npm run dev` |
 | "FPL resource not found: /entry/…" | The team ID is wrong |
 | "The FPL API is updating" (503) | FPL is processing a gameweek. Try again in a few minutes. |
-| `EADDRINUSE` on 3001 or 5173 | Another process is using the port. Stop it or set `PORT` (if you change `PORT`, also update the proxy in `client/vite.config.ts`). |
-| Stale data | Click **Refresh**, or delete `server/data/` |
+| `EADDRINUSE` on 3001 or 5173 | Another process is using the port. Stop it or set `PORT` (if you change `PORT`, also update the proxy in `app/client/vite.config.ts`). |
+| Stale data | Click **Refresh**, or delete `app/server/data/` |
 
 ## Docs
 
 - [AGENTS.md](AGENTS.md): conventions for AI coding agents (also loaded via `CLAUDE.md`)
 - [CONTEXT.md](CONTEXT.md): FPL domain notes, the FPL API endpoints used, how the points and caching work
-- [specs/](specs/): one spec per major update, covering requirements, what is done and what is still open
+- [app/specs/](app/specs/): one spec per major update, covering requirements, what is done and what is still open
 
 > ⚠️ Authentication is intentionally basic: one account set through environment variables and compared in plain text, with sessions held in memory. It is fine on your own machine. Do not expose it publicly as it is.

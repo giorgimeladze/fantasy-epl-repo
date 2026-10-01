@@ -4,7 +4,7 @@
 - **Started:** 2026-10-01
 - **Scope:** Project setup, authentication, team dashboard, tests, SQLite cache
 
-What this update had to deliver, what was delivered, and what is still open. Implementation details live in the code and in [AGENTS.md](../AGENTS.md).
+What this update had to deliver, what was delivered, and what is still open. Implementation details live in the code and in [AGENTS.md](../../AGENTS.md).
 
 ## Goal
 
