@@ -1,58 +1,18 @@
 import { config } from '../config.js';
-import type { FplBootstrap, FplElement, FplFixture, FplPick } from '../models/fpl.js';
+import type { FplBootstrap, FplElement, FplPick } from '../models/fpl.js';
 import { teamCacheRepository } from '../db/teamCacheRepository.js';
-import type { MyTeamResponse, PlayerView, Position, TeamSnapshot, UpcomingFixture } from '../models/team.js';
+import type { MyTeamResponse, PlayerView, TeamSnapshot, UpcomingFixture } from '../models/team.js';
 import { HttpError } from '../utils/httpError.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
 import { fplClient } from './fplClient.js';
+import { positionOf, upcomingFixturesByTeam } from './fplMappers.js';
 import { type GameweekData, pointsContributed } from './pointsCalculator.js';
-
-const POSITIONS: Record<string, Position> = { GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
 
 const tenths = (value: number): number => value / 10;
 const num = (value: string): number => Number.parseFloat(value) || 0;
 
 function range(from: number, to: number): number[] {
   return Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
-}
-
-function upcomingFixturesByTeam(
-  fixtures: FplFixture[],
-  bootstrap: FplBootstrap,
-): Map<number, UpcomingFixture[]> {
-  const shortName = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
-  const byTeam = new Map<number, UpcomingFixture[]>();
-  const add = (teamId: number, fixture: UpcomingFixture): void => {
-    const list = byTeam.get(teamId) ?? [];
-    list.push(fixture);
-    byTeam.set(teamId, list);
-  };
-
-  const scheduled = fixtures
-    .filter((f): f is FplFixture & { event: number } => f.event !== null && !f.finished)
-    .sort((a, b) => a.event - b.event || (a.kickoff_time ?? '').localeCompare(b.kickoff_time ?? ''));
-
-  for (const f of scheduled) {
-    add(f.team_h, {
-      gameweek: f.event,
-      opponent: shortName.get(f.team_a) ?? '?',
-      isHome: true,
-      difficulty: f.team_h_difficulty,
-      kickoffTime: f.kickoff_time,
-    });
-    add(f.team_a, {
-      gameweek: f.event,
-      opponent: shortName.get(f.team_h) ?? '?',
-      isHome: false,
-      difficulty: f.team_a_difficulty,
-      kickoffTime: f.kickoff_time,
-    });
-  }
-
-  for (const [teamId, list] of byTeam) {
-    byTeam.set(teamId, list.slice(0, config.fpl.upcomingFixturesCount));
-  }
-  return byTeam;
 }
 
 function toPlayerView(
@@ -62,13 +22,12 @@ function toPlayerView(
   extras: { gameweekPoints: number; pointsForMe: number; nextFixtures: UpcomingFixture[] },
 ): PlayerView {
   const club = bootstrap.teams.find((t) => t.id === element.team);
-  const type = bootstrap.element_types.find((t) => t.id === element.element_type);
 
   return {
     id: element.id,
     webName: element.web_name,
     fullName: `${element.first_name} ${element.second_name}`,
-    position: POSITIONS[type?.singular_name_short ?? ''] ?? 'MID',
+    position: positionOf(element, bootstrap),
     club: { id: element.team, name: club?.name ?? 'Unknown', shortName: club?.short_name ?? '?' },
 
     pickPosition: pick.position,

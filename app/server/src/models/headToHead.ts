@@ -65,7 +65,7 @@ export interface PlayerHeadToHead {
     webName: string;
     position: Position;
     clubShortName: string;
-    pickPosition: number;
+    pickPosition: number | null; // null when the player isn't in the manager's squad
     isStarter: boolean;
   };
   nextFixture: UpcomingFixture | null;
@@ -78,4 +78,29 @@ export interface HeadToHeadResponse {
   seasonsCovered: string[]; // seasons with data available, newest first
   players: PlayerHeadToHead[];
   cache: CacheInfo;
+}
+
+/** GET /api/head-to-head/players/:id — any Premier League player, not just the squad. */
+export interface PlayerHeadToHeadResponse extends PlayerHeadToHead {
+  seasonsCovered: string[];
+  cache: CacheInfo;
+}
+
+export interface ScoutPlayerOption {
+  id: number;
+  webName: string;
+  fullName: string;
+  position: Position;
+}
+
+export interface ScoutClubOption {
+  id: number;
+  name: string;
+  shortName: string;
+  players: ScoutPlayerOption[]; // GK, DEF, MID, FWD, then by name
+}
+
+/** GET /api/head-to-head/options — clubs and their players for the scout picker. */
+export interface ScoutOptionsResponse {
+  clubs: ScoutClubOption[]; // by name
 }

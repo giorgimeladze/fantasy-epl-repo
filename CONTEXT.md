@@ -44,6 +44,7 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **Insights** use FPL scoring rules for the player's *current* position:
   - Positive: goals, assists, clean sheets (not forwards), bonus, 3+ saves (goalkeepers), penalties saved, and defensive contribution (10 actions for DEF, 12 for MID/FWD).
   - Negative: under 60 minutes, 2+ goals conceded (GK/DEF), cards, own goals, missed penalties, and "Blank" when nothing positive happened and the player scored ≤ 2 points.
+- **Scout any player:** the same analysis is available for any Premier League player (`/api/head-to-head/players/:id`). Their next fixture comes from the upcoming-fixtures list and doesn't depend on your team. Results are cached per player (key `head-to-head:player:<id>`).
 - **Verdict** is based on average points per meeting: ≥ 6 is good, < 3 is poor, anything else is average, and no meetings means none.
 
 ## Caching

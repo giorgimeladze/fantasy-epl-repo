@@ -3,6 +3,7 @@ import { fixtureHistoryRepository } from '../../src/db/fixtureHistoryRepository.
 import { responseCacheRepository } from '../../src/db/responseCacheRepository.js';
 import { teamCacheRepository } from '../../src/db/teamCacheRepository.js';
 import { headToHeadService } from '../../src/services/headToHeadService.js';
+import { HttpError } from '../../src/utils/httpError.js';
 import { type FplApiMock, MOCK_TEAM_ID, mockFplApi } from '../helpers/mockFplApi.js';
 
 describe('headToHeadService.getHeadToHead', () => {
@@ -118,5 +119,89 @@ describe('headToHeadService.getHeadToHead', () => {
     assert.equal(refreshed.cache.fromCache, false);
     assert.ok(fpl.calls.includes('/element-summary/9/'));
     assert.ok(fpl.historyCalls.every((path) => path.startsWith('2022-23/')), 'only the missing season is retried');
+  });
+});
+
+describe('headToHeadService.getPlayerHeadToHead (scout any player)', () => {
+  let fpl: FplApiMock;
+
+  beforeEach(() => {
+    responseCacheRepository().clear();
+    fixtureHistoryRepository().clear();
+    fpl = mockFplApi();
+  });
+
+  afterEach(() => fpl.restore());
+
+  it('gives the same analysis for a single player as the squad view', async () => {
+    const [squad, single] = await Promise.all([
+      headToHeadService.getHeadToHead(MOCK_TEAM_ID),
+      headToHeadService.getPlayerHeadToHead(9),
+    ]);
+    const fromSquad = squad.players.find((p) => p.player.id === 9)!;
+
+    assert.deepEqual(single.matches, fromSquad.matches);
+    assert.deepEqual(single.summary, fromSquad.summary);
+    assert.deepEqual(single.nextFixture, fromSquad.nextFixture);
+    assert.deepEqual(single.seasonsCovered, ['2026-27', '2025-26', '2024-25', '2023-24']);
+  });
+
+  it('works for players outside the squad', async () => {
+    const isak = await headToHeadService.getPlayerHeadToHead(16); // sold after GW1
+
+    assert.deepEqual(isak.player, {
+      id: 16,
+      webName: 'Isak',
+      position: 'FWD',
+      clubShortName: 'LIV',
+      pickPosition: null,
+      isStarter: false,
+    });
+    assert.equal(isak.nextFixture?.opponent, 'ARS');
+    assert.equal(isak.summary.verdict, 'none');
+  });
+
+  it('does not need the manager team (no FPL entry calls)', async () => {
+    await headToHeadService.getPlayerHeadToHead(9);
+    assert.ok(!fpl.calls.some((path) => path.startsWith('/entry/')));
+  });
+
+  it('caches each player separately for 30 minutes', async () => {
+    await headToHeadService.getPlayerHeadToHead(9);
+    fpl.calls.length = 0;
+
+    assert.equal((await headToHeadService.getPlayerHeadToHead(9)).cache.fromCache, true);
+    assert.deepEqual(fpl.calls, []);
+    assert.equal((await headToHeadService.getPlayerHeadToHead(16)).cache.fromCache, false);
+  });
+
+  it('returns 404 for an unknown player', async () => {
+    await assert.rejects(headToHeadService.getPlayerHeadToHead(9999), (err: unknown) => {
+      assert.ok(err instanceof HttpError);
+      assert.equal(err.status, 404);
+      return true;
+    });
+  });
+});
+
+describe('headToHeadService.getScoutOptions', () => {
+  let fpl: FplApiMock;
+
+  beforeEach(() => {
+    fpl = mockFplApi();
+  });
+
+  afterEach(() => fpl.restore());
+
+  it('lists clubs by name with their players ordered by position, then name', async () => {
+    const { clubs } = await headToHeadService.getScoutOptions();
+
+    assert.deepEqual(clubs.map((c) => c.shortName), ['ARS', 'CHE', 'LIV', 'MCI']);
+    const liverpool = clubs.find((c) => c.shortName === 'LIV')!;
+    assert.deepEqual(
+      liverpool.players.map((p) => `${p.position} ${p.webName}`),
+      ['GK Alisson', 'DEF Virgil', 'MID M.Salah', 'FWD Isak'],
+    );
+    assert.equal(liverpool.players.find((p) => p.id === 9)?.fullName, 'Mohamed Salah');
   });
 });

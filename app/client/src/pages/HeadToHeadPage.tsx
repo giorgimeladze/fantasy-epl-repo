@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { api } from '../api.ts';
 import { HeadToHeadCard } from '../components/HeadToHeadCard.tsx';
 import { PageToolbar } from '../components/PageToolbar.tsx';
+import { PlayerScout } from '../components/PlayerScout.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import type { PlayerHeadToHead } from '../types.ts';
 
@@ -9,7 +10,7 @@ type Filter = 'all' | 'starters' | 'bench';
 type Sort = 'squad' | 'best' | 'worst';
 
 const SORTERS: Record<Sort, (a: PlayerHeadToHead, b: PlayerHeadToHead) => number> = {
-  squad: (a, b) => a.player.pickPosition - b.player.pickPosition,
+  squad: (a, b) => (a.player.pickPosition ?? 0) - (b.player.pickPosition ?? 0),
   best: (a, b) => byRecord(a, b, -1),
   worst: (a, b) => byRecord(a, b, 1),
 };
@@ -19,7 +20,7 @@ function byRecord(a: PlayerHeadToHead, b: PlayerHeadToHead, direction: 1 | -1): 
   const aHas = a.summary.matches > 0;
   const bHas = b.summary.matches > 0;
   if (aHas !== bHas) return aHas ? -1 : 1;
-  return (a.summary.averagePoints - b.summary.averagePoints) * direction || a.player.pickPosition - b.player.pickPosition;
+  return (a.summary.averagePoints - b.summary.averagePoints) * direction || SORTERS.squad(a, b);
 }
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -39,6 +40,8 @@ export function HeadToHeadPage({ onUnauthorized }: Props) {
       .filter((p) => filter === 'all' || (filter === 'starters') === p.player.isStarter)
       .sort(SORTERS[sort]);
   }, [data, filter, sort]);
+
+  const squadIds = useMemo(() => new Set(data?.players.map((p) => p.player.id) ?? []), [data]);
 
   return (
     <>
@@ -91,6 +94,8 @@ export function HeadToHeadPage({ onUnauthorized }: Props) {
           </div>
         </>
       )}
+
+      <PlayerScout squadIds={squadIds} onUnauthorized={onUnauthorized} />
     </>
   );
 }

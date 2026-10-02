@@ -21,17 +21,26 @@ function scoreline(m: HeadToHeadMatch): string {
 
 const xg = (value: number | null): string => (value === null ? '—' : value.toFixed(2));
 
-export function HeadToHeadCard({ data }: { data: PlayerHeadToHead }) {
+interface Props {
+  data: PlayerHeadToHead;
+  /** Shown next to the name, e.g. "In your squad" for a scouted player. */
+  tag?: string;
+}
+
+export function HeadToHeadCard({ data, tag }: Props) {
   const { player, nextFixture, matches, summary } = data;
 
   return (
     <article className="h2h-card">
       <header className="h2h-header">
         <div>
-          <h3>{player.webName}</h3>
+          <h3>
+            {player.webName}
+            {tag && <span className="tag">{tag}</span>}
+          </h3>
           <span className="muted">
             {player.clubShortName} · {player.position}
-            {!player.isStarter && ' · bench'}
+            {player.pickPosition !== null && !player.isStarter && ' · bench'}
           </span>
         </div>
         <div className="h2h-next">

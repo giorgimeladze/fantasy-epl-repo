@@ -47,6 +47,20 @@ router.get('/head-to-head', requireAuth, async (req, res) => {
   res.json(await headToHeadService.getHeadToHead(undefined, { forceRefresh }));
 });
 
+router.get('/head-to-head/options', requireAuth, async (_req, res) => {
+  res.json(await headToHeadService.getScoutOptions());
+});
+
+router.get('/head-to-head/players/:id', requireAuth, async (req, res) => {
+  const playerId = Number(req.params.id);
+  if (!Number.isInteger(playerId) || playerId <= 0) {
+    res.status(400).json({ error: 'Player id must be a positive integer' });
+    return;
+  }
+  const forceRefresh = req.query.refresh === 'true';
+  res.json(await headToHeadService.getPlayerHeadToHead(playerId, { forceRefresh }));
+});
+
 // Unknown /api routes get JSON, not the SPA fallback.
 router.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });

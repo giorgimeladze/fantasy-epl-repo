@@ -12,14 +12,14 @@ npm workspaces monorepo:
   - `src/routes.ts` — all HTTP routes. Keep handlers thin; logic lives in services.
   - `src/config.ts` — all configuration, read from env vars: admin credentials, team ID, DB path and cache TTLs.
   - `src/db/` — `database.ts` (built-in `node:sqlite` connection + `PRAGMA user_version` migrations), `teamCacheRepository.ts` (`team_cache`), `responseCacheRepository.ts` (generic key → JSON cache, used by head-to-head), `fixtureHistoryRepository.ts` (`player_fixture_history` + `history_import`).
-  - `src/services/` — `authService` (in-memory sessions), `fplClient` (HTTP calls to the FPL API with a short in-memory cache), `pointsCalculator` (pure scoring logic), `teamService` (assembles the dashboard payload; 30-min SQLite cache), `historyImporter` (downloads past seasons' CSVs once), `headToHeadInsights` (pure: results, what earned/cost points, verdicts), `headToHeadService` (assembles the head-to-head page; 30-min cache).
+  - `src/services/` — `authService` (in-memory sessions), `fplClient` (HTTP calls to the FPL API with a short in-memory cache), `pointsCalculator` (pure scoring logic), `teamService` (assembles the dashboard payload; 30-min SQLite cache), `historyImporter` (downloads past seasons' CSVs once), `headToHeadInsights` (pure: results, what earned/cost points, verdicts), `headToHeadService` (squad head-to-head, single-player scout and picker options; `analysePlayer` is shared by both; 30-min cache), `fplMappers` (shared FPL helpers: `positionOf`, `upcomingFixturesByTeam`).
   - `src/models/` — `fpl.ts` (raw FPL API shapes, only the fields we use), `team.ts` / `auth.ts` / `headToHead.ts` (our API contract).
   - `src/middleware/` — `requireAuth`, error handler.
   - `test/` — Mocha specs (`*.test.ts`, run through tsx), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/setup.ts` (in-memory DB + mock team ID).
 - `app/client/` — React 19 + Vite + TypeScript SPA.
   - `src/api.ts` — the only place that calls `fetch`; handles the bearer token.
   - `src/types.ts` — **mirror of `app/server/src/models/team.ts`, `auth.ts` and `headToHead.ts`**. When you change the API contract, update both.
-  - `src/pages/` — `LoginPage`, `DashboardPage` (`#/`), `HeadToHeadPage` (`#/head-to-head`). `src/components/` — presentational pieces, incl. `NavBar`.
+  - `src/pages/` — `LoginPage`, `DashboardPage` (`#/`), `HeadToHeadPage` (`#/head-to-head`). `src/components/` — presentational pieces, incl. `NavBar`, `HeadToHeadCard` (used for squad and scouted players) and `PlayerScout` (club → player picker at the bottom of Head-to-head).
   - `src/hooks/` — `useHashRoute` (tiny hash router; add new pages to `ROUTES` and `NavBar`'s `LINKS`), `useApiResource` (load/refresh/error/401 handling for a page).
 
 ## Commands

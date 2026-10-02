@@ -2,7 +2,7 @@
 
 - **Status:** Done
 - **Started:** 2026-10-02
-- **Scope:** Each player's record against their next opponent, on a new page reached from a top navigation bar
+- **Scope:** Each player's record against their next opponent, on a new page reached from a top navigation bar, plus a picker to scout any Premier League player
 - **Builds on:** [001 — Initial dashboard](001-initial-dashboard.md)
 
 ## Goal
@@ -27,6 +27,10 @@ Help decide who to start and who to captain. For every player in the squad, show
 - Don't call outside sources on every page view. Use the same 30-minute caching as the team page, plus a Refresh button.
 - Mocha tests with mocked data for every new outside source.
 
+### R4. Scout any player
+- At the end of the Head-to-head page, choose any club, then one of its players.
+- Show that player's last 4 matches against their next opponent, presented the same way as the squad cards.
+
 ## Done
 
 - [x] **R1**:
@@ -46,6 +50,11 @@ Help decide who to start and who to captain. For every player in the squad, show
   - Past seasons are never downloaded again. A season the source doesn't have yet is skipped and retried later.
   - 39 new Mocha tests (81 in total). They cover the history import, match lookup, insights and verdicts, assembling the page, caching, the CSV parser and the new endpoint.
   - Tests use mocked FPL responses and mocked past-season CSVs, so they never touch the network.
+- [x] **R4** (added after the first delivery, same day):
+  - A "Scout any player" section at the bottom of the page. Pick a club, then a player; players are grouped by position and ★ marks your own squad. The result uses the same card, tagged "In your squad" when relevant.
+  - Two new endpoints, `GET /api/head-to-head/options` and `GET /api/head-to-head/players/:id`, which reuse the squad analysis. Each player's result is cached for 30 minutes.
+  - 10 more tests, 91 in total. They check that a single player's result matches the squad view, cover a player outside the squad, the 404 for an unknown player, separate caching per player, the order of the picker options, and the new routes, including input validation.
+  - Checked live: 20 clubs and 667 players in the picker. G. Jesus has 3 matches against next opponent Leeds, because Leeds weren't in the Premier League for two of the seasons covered.
 - [x] **Checked against live data** (sample team 1): the first load took about 5 s including the history import, a cached load about 2 ms, and a refresh about 0.5 s.
 
 ## Known limitations

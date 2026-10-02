@@ -1,4 +1,10 @@
-import type { HeadToHeadResponse, LoginResponse, MyTeamResponse } from './types.ts';
+import type {
+  HeadToHeadResponse,
+  LoginResponse,
+  MyTeamResponse,
+  PlayerHeadToHeadResponse,
+  ScoutOptionsResponse,
+} from './types.ts';
 
 const TOKEN_KEY = 'fpl.token';
 
@@ -69,5 +75,13 @@ export const api = {
 
   getHeadToHead(forceRefresh = false): Promise<HeadToHeadResponse> {
     return request<HeadToHeadResponse>(forceRefresh ? '/head-to-head?refresh=true' : '/head-to-head');
+  },
+
+  getScoutOptions(): Promise<ScoutOptionsResponse> {
+    return request<ScoutOptionsResponse>('/head-to-head/options');
+  },
+
+  getPlayerHeadToHead(playerId: number): Promise<PlayerHeadToHeadResponse> {
+    return request<PlayerHeadToHeadResponse>(`/head-to-head/players/${playerId}`);
   },
 };

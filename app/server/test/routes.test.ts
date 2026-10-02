@@ -120,6 +120,36 @@ describe('HTTP routes', () => {
     });
   });
 
+  describe('scout endpoints', () => {
+    it('require authentication', async () => {
+      assert.equal((await request(app).get('/api/head-to-head/options')).status, 401);
+      assert.equal((await request(app).get('/api/head-to-head/players/9')).status, 401);
+    });
+
+    it('GET /api/head-to-head/options lists clubs and players', async () => {
+      const token = await login();
+      const res = await request(app).get('/api/head-to-head/options').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.clubs.length, 4);
+    });
+
+    it('GET /api/head-to-head/players/:id returns one player', async () => {
+      const token = await login();
+      const res = await request(app).get('/api/head-to-head/players/9').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.player.webName, 'M.Salah');
+      assert.equal(res.body.matches.length, 4);
+    });
+
+    it('validates the player id', async () => {
+      const token = await login();
+      const bad = await request(app).get('/api/head-to-head/players/abc').set('Authorization', `Bearer ${token}`);
+      assert.equal(bad.status, 400);
+      const missing = await request(app).get('/api/head-to-head/players/9999').set('Authorization', `Bearer ${token}`);
+      assert.equal(missing.status, 404);
+    });
+  });
+
   it('POST /api/auth/logout invalidates the token', async () => {
     const token = await login();
 

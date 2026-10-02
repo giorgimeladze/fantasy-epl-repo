@@ -592,3 +592,55 @@ table.players {
     margin: 0;
   }
 }
+
+/* Scout any player */
+.scout {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--border);
+}
+
+.scout h2 {
+  margin-top: 0;
+}
+
+.scout > .muted {
+  margin-top: 0;
+}
+
+.scout-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.scout-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1 1 220px;
+  max-width: 340px;
+}
+
+.scout-controls select {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.tag {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  background: var(--green);
+  color: var(--purple);
+}

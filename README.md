@@ -5,7 +5,7 @@ A personal Fantasy Premier League dashboard. Sign in, then see your current 15-m
 Two pages, linked from the navigation bar at the top:
 
 - **My team**: the pitch, the bench and a sortable stats table.
-- **Head-to-head**: for each player, their last 4 appearances against their next opponent. It shows goals, assists, minutes, clean sheets, bonus, xG/xA, points, what earned or cost them points (cards, goals conceded, blanks), and an overall verdict.
+- **Head-to-head**: for each player, their last 4 appearances against their next opponent. It shows goals, assists, minutes, clean sheets, bonus, xG/xA, points, what earned or cost them points (cards, goals conceded, blanks), and an overall verdict. At the bottom, **Scout any player** lets you pick any club and then any of its players to get the same analysis (★ marks players already in your squad).
 
 - **app/server/** — Node.js 22 + TypeScript + Express 5 API that proxies the public FPL API and caches your team in SQLite for 30 minutes
 - **app/client/** — React 19 + TypeScript + Vite single-page app
@@ -100,13 +100,13 @@ npm run test:watch -w app/server     # re-run on change
 | `test/services/pointsCalculator.test.ts` | Captain/vice/triple captain, autosubs, bench boost, "points for me" |
 | `test/services/teamService.test.ts` | Building the team from mocked FPL data, the 30-minute SQLite cache, error mapping |
 | `test/services/authService.test.ts` | Login, session expiry, logout |
-| `test/services/headToHeadService.test.ts` | Last 4 matches vs the next opponent across seasons, summaries, caching |
+| `test/services/headToHeadService.test.ts` | Last 4 matches vs the next opponent across seasons, summaries, caching, scouting any player, picker options |
 | `test/services/headToHeadInsights.test.ts` | What earned or cost points per position, results, verdicts |
 | `test/services/historyImporter.test.ts` | Season helpers, CSV → records, import-once and skipping missing seasons |
 | `test/db/teamCacheRepository.test.ts` | Migrations and the cache table: read, upsert, delete |
 | `test/db/fixtureHistoryRepository.test.ts` | Storing seasons, querying matches against an opponent |
 | `test/utils/csv.test.ts` | CSV parsing (quotes, CRLF, blank lines) |
-| `test/routes.test.ts` | HTTP endpoints end to end (auth, `/api/team`, `/api/head-to-head`, cache, errors) |
+| `test/routes.test.ts` | HTTP endpoints end to end (auth, `/api/team`, `/api/head-to-head` and its scout endpoints, cache, errors) |
 
 The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. To add a scenario, drop a JSON file in `test/mocks/fpl/` and map it with `mockFplApi({ '/path/': 'file.json' })`. You can also pass an inline response, e.g. `{ status: 503 }`.
 
@@ -131,6 +131,8 @@ The history mocks cover 2023-24 to 2025-26; 2022-23 is deliberately missing to t
 | GET | `/api/auth/session` | Bearer | Current session |
 | POST | `/api/auth/logout` | Bearer | Ends the session |
 | GET | `/api/team` | Bearer | Manager summary, current gameweek, 15 players with stats and fixtures, and `cache` info. `?refresh=true` skips the cache. |
+| GET | `/api/head-to-head/options` | Bearer | All clubs with their players (for the scout picker) |
+| GET | `/api/head-to-head/players/:id` | Bearer | One player's last 4 matches against their next opponent, cached per player for 30 minutes |
 | GET | `/api/head-to-head` | Bearer | Each player's last 4 matches against their next opponent, with insights, a summary and `cache` info. `?refresh=true` skips the cache. |
 
 ## Troubleshooting

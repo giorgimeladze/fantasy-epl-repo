@@ -146,7 +146,7 @@ export interface PlayerHeadToHead {
     webName: string;
     position: Position;
     clubShortName: string;
-    pickPosition: number;
+    pickPosition: number | null; // null when the player isn't in your squad
     isStarter: boolean;
   };
   nextFixture: UpcomingFixture | null;
@@ -159,4 +159,27 @@ export interface HeadToHeadResponse {
   seasonsCovered: string[];
   players: PlayerHeadToHead[];
   cache: CacheInfo;
+}
+
+export interface PlayerHeadToHeadResponse extends PlayerHeadToHead {
+  seasonsCovered: string[];
+  cache: CacheInfo;
+}
+
+export interface ScoutPlayerOption {
+  id: number;
+  webName: string;
+  fullName: string;
+  position: Position;
+}
+
+export interface ScoutClubOption {
+  id: number;
+  name: string;
+  shortName: string;
+  players: ScoutPlayerOption[];
+}
+
+export interface ScoutOptionsResponse {
+  clubs: ScoutClubOption[];
 }
