@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { LoginRequest } from './models/auth.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import { authService } from './services/authService.js';
+import { headToHeadService } from './services/headToHeadService.js';
 import { teamService } from './services/teamService.js';
 
 export const router = Router();
@@ -38,6 +39,12 @@ router.post('/auth/logout', requireAuth, (_req, res) => {
 router.get('/team', requireAuth, async (req, res) => {
   const forceRefresh = req.query.refresh === 'true';
   res.json(await teamService.getMyTeam(undefined, { forceRefresh }));
+});
+
+// Last matches vs each player's next opponent. Same 30-minute cache and ?refresh=true as /team.
+router.get('/head-to-head', requireAuth, async (req, res) => {
+  const forceRefresh = req.query.refresh === 'true';
+  res.json(await headToHeadService.getHeadToHead(undefined, { forceRefresh }));
 });
 
 // Unknown /api routes get JSON, not the SPA fallback.

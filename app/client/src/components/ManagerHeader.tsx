@@ -28,7 +28,7 @@ export function ManagerHeader({ manager, gameweek, cache }: Props) {
   return (
     <section className="manager">
       <div>
-        <h1>{manager.teamName}</h1>
+        <h2 className="team-name">{manager.teamName}</h2>
         <p className="muted">
           {manager.managerName} · {gameweek.name} {gameweek.finished ? '(finished)' : '(in progress)'}
           {manager.activeChip && (

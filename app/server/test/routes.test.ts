@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
+import { fixtureHistoryRepository } from '../src/db/fixtureHistoryRepository.js';
+import { responseCacheRepository } from '../src/db/responseCacheRepository.js';
 import { teamCacheRepository } from '../src/db/teamCacheRepository.js';
 import { type FplApiMock, mockFplApi } from './helpers/mockFplApi.js';
 
@@ -17,6 +19,8 @@ describe('HTTP routes', () => {
 
   beforeEach(() => {
     teamCacheRepository().clear();
+    responseCacheRepository().clear();
+    fixtureHistoryRepository().clear();
     fpl = mockFplApi();
   });
 
@@ -92,6 +96,27 @@ describe('HTTP routes', () => {
       const res = await request(app).get('/api/team').set('Authorization', `Bearer ${token}`);
       assert.equal(res.status, 503);
       assert.match(res.body.error, /updating/);
+    });
+  });
+
+  describe('GET /api/head-to-head', () => {
+    it('requires authentication', async () => {
+      const res = await request(app).get('/api/head-to-head');
+      assert.equal(res.status, 401);
+    });
+
+    it('returns every squad player with their record against the next opponent', async () => {
+      const token = await login();
+
+      const res = await request(app).get('/api/head-to-head').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.players.length, 15);
+      const salah = res.body.players.find((p: { player: { webName: string } }) => p.player.webName === 'M.Salah');
+      assert.equal(salah.matches.length, 4);
+      assert.equal(res.body.cache.fromCache, false);
+
+      const again = await request(app).get('/api/head-to-head').set('Authorization', `Bearer ${token}`);
+      assert.equal(again.body.cache.fromCache, true);
     });
   });
 

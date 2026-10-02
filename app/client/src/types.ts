@@ -87,3 +87,76 @@ export interface LoginResponse {
   username: string;
   expiresAt: string;
 }
+
+// Mirror of server/src/models/headToHead.ts — keep in sync.
+
+export interface Insight {
+  label: string;
+  tone: 'good' | 'bad';
+}
+
+export interface HeadToHeadMatch {
+  season: string;
+  fixtureId: number;
+  kickoffTime: string | null;
+  gameweek: number | null;
+  teamShortName: string | null;
+  opponentShortName: string;
+  wasHome: boolean;
+  teamHScore: number | null;
+  teamAScore: number | null;
+  minutes: number;
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  goalsConceded: number;
+  ownGoals: number;
+  penaltiesSaved: number;
+  penaltiesMissed: number;
+  yellowCards: number;
+  redCards: number;
+  saves: number;
+  bonus: number;
+  bps: number;
+  totalPoints: number;
+  expectedGoals: number | null;
+  expectedAssists: number | null;
+  defensiveContribution: number | null;
+  result: 'W' | 'D' | 'L' | null;
+  insights: Insight[];
+}
+
+export type Verdict = 'good' | 'average' | 'poor' | 'none';
+
+export interface HeadToHeadSummary {
+  matches: number;
+  averagePoints: number;
+  totalPoints: number;
+  goals: number;
+  assists: number;
+  cleanSheets: number;
+  bonus: number;
+  cards: number;
+  verdict: Verdict;
+}
+
+export interface PlayerHeadToHead {
+  player: {
+    id: number;
+    webName: string;
+    position: Position;
+    clubShortName: string;
+    pickPosition: number;
+    isStarter: boolean;
+  };
+  nextFixture: UpcomingFixture | null;
+  matches: HeadToHeadMatch[];
+  summary: HeadToHeadSummary;
+}
+
+export interface HeadToHeadResponse {
+  gameweek: number;
+  seasonsCovered: string[];
+  players: PlayerHeadToHead[];
+  cache: CacheInfo;
+}

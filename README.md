@@ -2,6 +2,11 @@
 
 A personal Fantasy Premier League dashboard. Sign in, then see your current 15-man squad: starting XI on a pitch, bench, form, upcoming fixtures with difficulty ratings, and how many points each player has earned **for you** this season.
 
+Two pages, linked from the navigation bar at the top:
+
+- **My team**: the pitch, the bench and a sortable stats table.
+- **Head-to-head**: for each player, their last 4 appearances against their next opponent. It shows goals, assists, minutes, clean sheets, bonus, xG/xA, points, what earned or cost them points (cards, goals conceded, blanks), and an overall verdict.
+
 - **app/server/** — Node.js 22 + TypeScript + Express 5 API that proxies the public FPL API and caches your team in SQLite for 30 minutes
 - **app/client/** — React 19 + TypeScript + Vite single-page app
 
@@ -70,10 +75,20 @@ The first time your team loads, the server fetches it from the FPL API and store
 - The **Refresh** button skips the cache (`GET /api/team?refresh=true`) and saves fresh data.
 - To wipe the cache, stop the server and delete `app/server/data/`.
 - To change the 30-minute TTL, edit `config.db.teamCacheTtlMs` in [`app/server/src/config.ts`](app/server/src/config.ts).
+- The Head-to-head page is cached the same way (`config.db.headToHeadCacheTtlMs`), with its own Refresh button.
+
+### Match history
+
+FPL's API only has match-by-match stats for the current season. Earlier seasons come from the community-maintained [vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League) dataset.
+
+- **First visit:** the first time you open Head-to-head, the server downloads the last 4 seasons (about 20 MB of CSV) and stores them in SQLite. This takes a few seconds.
+- **After that:** past seasons never change, so they are never downloaded again. The table is about 17 MB.
+- **Missing seasons:** if a season isn't published yet, it is skipped and retried on a later load.
+- **Settings:** change the number of seasons and matches in `config.history`.
 
 ## Tests
 
-Server tests use **Mocha**, with `node:assert` for assertions and `supertest` for HTTP routes. They never call the real FPL API. `fetch` is stubbed to return mocked responses from [`app/server/test/mocks/fpl/`](app/server/test/mocks/fpl/), and the database is in-memory SQLite.
+Server tests use **Mocha**, with `node:assert` for assertions and `supertest` for HTTP routes. They never call the network. `fetch` is stubbed to return mocked responses from [`app/server/test/mocks/fpl/`](app/server/test/mocks/fpl/) (FPL API) and [`app/server/test/mocks/history/`](app/server/test/mocks/history/) (past-season CSVs), and the database is in-memory SQLite.
 
 ```bash
 npm test                         # all server tests
@@ -85,10 +100,17 @@ npm run test:watch -w app/server     # re-run on change
 | `test/services/pointsCalculator.test.ts` | Captain/vice/triple captain, autosubs, bench boost, "points for me" |
 | `test/services/teamService.test.ts` | Building the team from mocked FPL data, the 30-minute SQLite cache, error mapping |
 | `test/services/authService.test.ts` | Login, session expiry, logout |
+| `test/services/headToHeadService.test.ts` | Last 4 matches vs the next opponent across seasons, summaries, caching |
+| `test/services/headToHeadInsights.test.ts` | What earned or cost points per position, results, verdicts |
+| `test/services/historyImporter.test.ts` | Season helpers, CSV → records, import-once and skipping missing seasons |
 | `test/db/teamCacheRepository.test.ts` | Migrations and the cache table: read, upsert, delete |
-| `test/routes.test.ts` | HTTP endpoints end to end (auth, `/api/team`, cache, errors) |
+| `test/db/fixtureHistoryRepository.test.ts` | Storing seasons, querying matches against an opponent |
+| `test/utils/csv.test.ts` | CSV parsing (quotes, CRLF, blank lines) |
+| `test/routes.test.ts` | HTTP endpoints end to end (auth, `/api/team`, `/api/head-to-head`, cache, errors) |
 
 The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. To add a scenario, drop a JSON file in `test/mocks/fpl/` and map it with `mockFplApi({ '/path/': 'file.json' })`. You can also pass an inline response, e.g. `{ status: 503 }`.
+
+The history mocks cover 2023-24 to 2025-26; 2022-23 is deliberately missing to test the skip path. In them, Salah has 5 games against Arsenal (one at 0 minutes, which is ignored), Raya changes club, and Haaland never meets his next opponent.
 
 ## Scripts
 
@@ -109,6 +131,7 @@ The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: 
 | GET | `/api/auth/session` | Bearer | Current session |
 | POST | `/api/auth/logout` | Bearer | Ends the session |
 | GET | `/api/team` | Bearer | Manager summary, current gameweek, 15 players with stats and fixtures, and `cache` info. `?refresh=true` skips the cache. |
+| GET | `/api/head-to-head` | Bearer | Each player's last 4 matches against their next opponent, with insights, a summary and `cache` info. `?refresh=true` skips the cache. |
 
 ## Troubleshooting
 
@@ -120,6 +143,7 @@ The mock data describes a 2-gameweek season for team `123456`. GW1 is finished: 
 | "The FPL API is updating" (503) | FPL is processing a gameweek. Try again in a few minutes. |
 | `EADDRINUSE` on 3001 or 5173 | Another process is using the port. Stop it or set `PORT` (if you change `PORT`, also update the proxy in `app/client/vite.config.ts`). |
 | Stale data | Click **Refresh**, or delete `app/server/data/` |
+| "Could not download historical data" | GitHub isn't reachable. The page works again once it is; seasons already stored are kept. |
 
 ## Docs
 

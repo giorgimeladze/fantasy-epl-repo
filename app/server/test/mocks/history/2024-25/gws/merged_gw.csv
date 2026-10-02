@@ -1,0 +1,4 @@
+name,position,team,assists,bonus,bps,clean_sheets,element,expected_assists,expected_goals,fixture,goals_conceded,goals_scored,kickoff_time,minutes,opponent_team,own_goals,penalties_missed,penalties_saved,red_cards,round,saves,team_a_score,team_h_score,total_points,was_home,yellow_cards,GW
+Mohamed Salah,MID,Liverpool,1,0,25,0,308,0.40,0.30,201,2,0,2024-10-27T16:30:00Z,90,1,0,0,0,0,9,0,2,2,4,False,1,9
+Mohamed Salah,MID,Liverpool,0,1,33,0,308,0.05,0.65,202,2,1,2025-05-11T15:30:00Z,85,1,0,0,0,0,36,0,2,2,8,True,0,36
+David Raya,GK,Arsenal,0,0,22,0,20,0.00,0.00,201,2,0,2024-10-27T16:30:00Z,90,11,0,0,0,0,9,3,2,2,2,True,0,9

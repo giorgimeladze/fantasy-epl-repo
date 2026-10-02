@@ -1,4 +1,4 @@
-import type { LoginResponse, MyTeamResponse } from './types.ts';
+import type { HeadToHeadResponse, LoginResponse, MyTeamResponse } from './types.ts';
 
 const TOKEN_KEY = 'fpl.token';
 
@@ -65,5 +65,9 @@ export const api = {
 
   getTeam(forceRefresh = false): Promise<MyTeamResponse> {
     return request<MyTeamResponse>(forceRefresh ? '/team?refresh=true' : '/team');
+  },
+
+  getHeadToHead(forceRefresh = false): Promise<HeadToHeadResponse> {
+    return request<HeadToHeadResponse>(forceRefresh ? '/head-to-head?refresh=true' : '/head-to-head');
   },
 };

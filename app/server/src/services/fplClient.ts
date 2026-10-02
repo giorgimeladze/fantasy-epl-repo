@@ -1,5 +1,5 @@
 import { config } from '../config.js';
-import type { FplBootstrap, FplEntry, FplFixture, FplLive, FplPicks } from '../models/fpl.js';
+import type { FplBootstrap, FplElementSummary, FplEntry, FplFixture, FplLive, FplPicks } from '../models/fpl.js';
 import { HttpError } from '../utils/httpError.js';
 
 interface CacheEntry {
@@ -59,6 +59,10 @@ export const fplClient = {
 
   getLive(gameweek: number, finished: boolean): Promise<FplLive> {
     return getCached(`/event/${gameweek}/live/`, ttl(finished));
+  },
+
+  getElementSummary(elementId: number): Promise<FplElementSummary> {
+    return getCached(`/element-summary/${elementId}/`, config.fpl.liveCacheTtlMs);
   },
 
   getUpcomingFixtures(): Promise<FplFixture[]> {

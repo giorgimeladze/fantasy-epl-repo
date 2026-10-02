@@ -37,7 +37,7 @@ describe('teamCacheRepository', () => {
 
   it('runs migrations on open', () => {
     const { user_version } = db.prepare('PRAGMA user_version').get() as { user_version: number };
-    assert.equal(user_version, 1);
+    assert.equal(user_version, 2);
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'team_cache'").get();
     assert.ok(table);
   });

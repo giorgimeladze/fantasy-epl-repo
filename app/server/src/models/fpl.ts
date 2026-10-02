@@ -11,6 +11,7 @@ export interface FplEvent {
 
 export interface FplTeam {
   id: number;
+  code: number; // stable across seasons (unlike id)
   name: string;
   short_name: string;
 }
@@ -22,6 +23,7 @@ export interface FplElementType {
 
 export interface FplElement {
   id: number;
+  code: number; // stable across seasons (unlike id)
   web_name: string;
   first_name: string;
   second_name: string;
@@ -119,4 +121,37 @@ export interface FplFixture {
   team_a_difficulty: number;
   kickoff_time: string | null;
   finished: boolean;
+}
+
+/** One fixture in /element-summary/{id}/ `history` (current season only). */
+export interface FplElementHistory {
+  element: number;
+  fixture: number;
+  opponent_team: number;
+  total_points: number;
+  was_home: boolean;
+  kickoff_time: string | null;
+  team_h_score: number | null;
+  team_a_score: number | null;
+  round: number;
+  minutes: number;
+  goals_scored: number;
+  assists: number;
+  clean_sheets: number;
+  goals_conceded: number;
+  own_goals: number;
+  penalties_saved: number;
+  penalties_missed: number;
+  yellow_cards: number;
+  red_cards: number;
+  saves: number;
+  bonus: number;
+  bps: number;
+  expected_goals: string;
+  expected_assists: string;
+  defensive_contribution?: number;
+}
+
+export interface FplElementSummary {
+  history: FplElementHistory[];
 }

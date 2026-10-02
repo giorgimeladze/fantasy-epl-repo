@@ -14,6 +14,14 @@ export const config = {
     // SQLite file; use ":memory:" for an ephemeral database (tests do).
     path: process.env.DATABASE_PATH ?? path.join(serverRoot, 'data', 'fpl.sqlite'),
     teamCacheTtlMs: 30 * MINUTE,
+    headToHeadCacheTtlMs: 30 * MINUTE,
+  },
+
+  history: {
+    // Community-maintained per-fixture FPL data for past seasons (github.com/vaastav/Fantasy-Premier-League).
+    baseUrl: 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data',
+    pastSeasons: 4,
+    matchesPerPlayer: 4,
   },
 
   auth: {

@@ -36,21 +36,25 @@
   "teams": [
     {
       "id": 1,
+      "code": 3,
       "name": "Arsenal",
       "short_name": "ARS"
     },
     {
       "id": 2,
+      "code": 14,
       "name": "Liverpool",
       "short_name": "LIV"
     },
     {
       "id": 3,
+      "code": 43,
       "name": "Man City",
       "short_name": "MCI"
     },
     {
       "id": 4,
+      "code": 8,
       "name": "Chelsea",
       "short_name": "CHE"
     }
@@ -76,6 +80,7 @@
   "elements": [
     {
       "id": 1,
+      "code": 100001,
       "web_name": "Raya",
       "first_name": "David",
       "second_name": "Raya",
@@ -101,6 +106,7 @@
     },
     {
       "id": 2,
+      "code": 100002,
       "web_name": "Alisson",
       "first_name": "Alisson",
       "second_name": "Becker",
@@ -126,6 +132,7 @@
     },
     {
       "id": 3,
+      "code": 100003,
       "web_name": "Saliba",
       "first_name": "William",
       "second_name": "Saliba",
@@ -151,6 +158,7 @@
     },
     {
       "id": 4,
+      "code": 100004,
       "web_name": "Gabriel",
       "first_name": "Gabriel",
       "second_name": "dos Santos Magalhães",
@@ -176,6 +184,7 @@
     },
     {
       "id": 5,
+      "code": 100005,
       "web_name": "Virgil",
       "first_name": "Virgil",
       "second_name": "van Dijk",
@@ -201,6 +210,7 @@
     },
     {
       "id": 6,
+      "code": 100006,
       "web_name": "Gvardiol",
       "first_name": "Joško",
       "second_name": "Gvardiol",
@@ -226,6 +236,7 @@
     },
     {
       "id": 7,
+      "code": 100007,
       "web_name": "Colwill",
       "first_name": "Levi",
       "second_name": "Colwill",
@@ -251,6 +262,7 @@
     },
     {
       "id": 8,
+      "code": 100008,
       "web_name": "Saka",
       "first_name": "Bukayo",
       "second_name": "Saka",
@@ -276,6 +288,7 @@
     },
     {
       "id": 9,
+      "code": 100009,
       "web_name": "M.Salah",
       "first_name": "Mohamed",
       "second_name": "Salah",
@@ -301,6 +314,7 @@
     },
     {
       "id": 10,
+      "code": 100010,
       "web_name": "Foden",
       "first_name": "Phil",
       "second_name": "Foden",
@@ -326,6 +340,7 @@
     },
     {
       "id": 11,
+      "code": 100011,
       "web_name": "Palmer",
       "first_name": "Cole",
       "second_name": "Palmer",
@@ -351,6 +366,7 @@
     },
     {
       "id": 12,
+      "code": 100012,
       "web_name": "Rice",
       "first_name": "Declan",
       "second_name": "Rice",
@@ -376,6 +392,7 @@
     },
     {
       "id": 13,
+      "code": 100013,
       "web_name": "Haaland",
       "first_name": "Erling",
       "second_name": "Haaland",
@@ -401,6 +418,7 @@
     },
     {
       "id": 14,
+      "code": 100014,
       "web_name": "N.Jackson",
       "first_name": "Nicolas",
       "second_name": "Jackson",
@@ -426,6 +444,7 @@
     },
     {
       "id": 15,
+      "code": 100015,
       "web_name": "Havertz",
       "first_name": "Kai",
       "second_name": "Havertz",
@@ -451,6 +470,7 @@
     },
     {
       "id": 16,
+      "code": 100016,
       "web_name": "Isak",
       "first_name": "Alexander",
       "second_name": "Isak",
