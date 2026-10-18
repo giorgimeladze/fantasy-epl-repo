@@ -151,6 +151,7 @@ The history mocks cover 2023-24 to 2025-26; 2022-23 is deliberately missing to t
 
 - [AGENTS.md](AGENTS.md): conventions for AI coding agents (also loaded via `CLAUDE.md`)
 - [CONTEXT.md](CONTEXT.md): FPL domain notes, the FPL API endpoints used, how the points and caching work
-- [app/specs/](app/specs/): one spec per major update, covering requirements, what is done and what is still open
+- [docs/specs/](docs/specs/): one spec per major update, covering requirements, what is done and what is still open
+- [docs/tasks/](docs/tasks/): backlog and research notes, e.g. the [recommendations roadmap](docs/tasks/recommendations-roadmap.md)
 
 > ⚠️ Authentication is intentionally basic: one account set through environment variables and compared in plain text, with sessions held in memory. It is fine on your own machine. Do not expose it publicly as it is.

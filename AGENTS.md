@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents (Claude Code reads this via `CLAUDE.md`). Read [CONTEXT.md](CONTEXT.md) for the domain background and the specs in [app/specs/](app/specs/) for what is in or out of scope before making changes.
+Instructions for AI coding agents (Claude Code reads this via `CLAUDE.md`). Read [CONTEXT.md](CONTEXT.md) for the domain background and the specs in [docs/specs/](docs/specs/) for what is in or out of scope before making changes.
 
 ## Project shape
 
@@ -56,4 +56,5 @@ Always run `npm run typecheck` and `npm test` after changes.
 - `FPL_TEAM_ID` must be set (env var or `config.ts`) or `/api/team` returns a 500 explaining so.
 - Past-season data comes from github.com/vaastav/Fantasy-Premier-League (`config.history.baseUrl`). It is imported once per season into SQLite; to force a re-import, delete `app/server/data/`.
 - The FPL API is unofficial and undocumented; fields can change between seasons. It may return 503 while gameweeks are being updated.
-- Specs live in [app/specs/](app/specs/), one file per major update (`NNN-short-name.md`). Start a big change by copying `app/specs/_template.md` to the next number. Keep the active spec up to date: move items to "Done" as you complete them. Don't rewrite finished specs. Later specs supersede earlier ones. See [app/specs/README.md](app/specs/README.md).
+- Specs live in [docs/specs/](docs/specs/), one file per major update (`NNN-short-name.md`). Start a big change by copying `docs/specs/_template.md` to the next number. Keep the active spec up to date: move items to "Done" as you complete them. Don't rewrite finished specs. Later specs supersede earlier ones. See [docs/specs/README.md](docs/specs/README.md).
+- Backlog ideas and research that aren't specs yet live in [docs/tasks/](docs/tasks/) (e.g. [recommendations-roadmap.md](docs/tasks/recommendations-roadmap.md): what to build and what to avoid). Turn a task into a numbered spec when work starts.
