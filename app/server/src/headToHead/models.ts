@@ -1,5 +1,5 @@
-// Response contract for GET /api/head-to-head. Mirrored in client/src/types.ts.
-import type { CacheInfo, Position, UpcomingFixture } from './team.js';
+// Response contract for GET /api/head-to-head. Re-exported by app/client/src/types.ts: types only.
+import type { CacheInfo, Position, UpcomingFixture } from '../team/models.js';
 
 /** One player's stats in one past fixture, normalised from either data source. */
 export interface FixtureRecord {

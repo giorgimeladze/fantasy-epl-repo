@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { PlayerHeadToHead, ScoutOptionsResponse } from '../src/models/headToHead.js';
+import type { PlayerHeadToHead, ScoutOptionsResponse } from '../src/headToHead/models.js';
 import { fplCalls, historyCalls, mockFplApi, resetCalls } from './helpers/mockFplApi.js';
 import { type ApiClient, loginAsAdmin, useTestEnvironment } from './helpers/namespace.js';
 

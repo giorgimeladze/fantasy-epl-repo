@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express } from 'express';
-import { errorHandler } from './middleware/errorHandler.js';
+import { errorHandler } from './utils/http.js';
 import { router } from './routes.js';
 
 const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');

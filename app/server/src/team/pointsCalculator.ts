@@ -1,4 +1,4 @@
-import type { FplLive, FplPicks } from '../models/fpl.js';
+import type { FplLive, FplPicks } from '../fpl/models.js';
 
 /**
  * Final multiplier per player for one gameweek, after automatic substitutions and

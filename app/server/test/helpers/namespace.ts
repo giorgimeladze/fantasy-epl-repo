@@ -4,9 +4,8 @@ import assert from 'node:assert/strict';
 import request, { type Response, type Test } from 'supertest';
 import { createApp } from '../../src/app.js';
 import { config } from '../../src/config.js';
-import { fixtureHistoryRepository } from '../../src/db/fixtureHistoryRepository.js';
-import { responseCacheRepository } from '../../src/db/responseCacheRepository.js';
-import { teamCacheRepository } from '../../src/db/teamCacheRepository.js';
+import { fixtureHistoryRepository } from '../../src/history/fixtureHistoryRepository.js';
+import { responseCache } from '../../src/db/responseCache.js';
 import { mockFplApi, restoreFetch } from './mockFplApi.js';
 
 const app = createApp();
@@ -62,8 +61,7 @@ export async function loginAsAdmin() {
  */
 export function useTestEnvironment(): void {
   beforeEach(() => {
-    teamCacheRepository().clear();
-    responseCacheRepository().clear();
+    responseCache.clear();
     fixtureHistoryRepository().clear();
     mockFplApi();
   });

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { PlayerProjection, ProjectionsResponse } from '../src/models/projections.js';
+import type { PlayerProjection, ProjectionsResponse } from '../src/projections/models.js';
 import { fplCalls } from './helpers/mockFplApi.js';
 import { type ApiClient, loginAsAdmin, useTestEnvironment } from './helpers/namespace.js';
 

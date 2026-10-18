@@ -7,19 +7,11 @@ Instructions for AI coding agents (Claude Code reads this via `CLAUDE.md`). Read
 npm workspaces monorepo:
 
 - `app/server/` — Node 22 + TypeScript + Express 5 API. ESM (`"type": "module"`, `module: nodenext`), so **relative imports must end in `.js`**.
-  - `src/server.ts` — process entrypoint (listen).
-  - `src/app.ts` — builds the Express app (middleware, `/api` router, static client, error handler).
-  - `src/routes.ts` — all HTTP routes. Keep handlers thin; logic lives in services.
-  - `src/config.ts` — all configuration, read from env vars: admin credentials, team ID, DB path and cache TTLs.
-  - `src/db/` — `database.ts` (built-in `node:sqlite` connection + `PRAGMA user_version` migrations), `teamCacheRepository.ts` (`team_cache`), `responseCacheRepository.ts` (generic key → JSON cache, used by head-to-head), `fixtureHistoryRepository.ts` (`player_fixture_history` + `history_import`).
-  - `src/services/` — `authService` (in-memory sessions), `fplClient` (HTTP calls to the FPL API with a short in-memory cache), `pointsCalculator` (pure scoring logic), `teamService` (assembles the dashboard payload; 30-min SQLite cache), `historyImporter` (downloads past seasons' CSVs once), `headToHeadInsights` (pure: results, what earned/cost points, verdicts), `headToHeadService` (squad head-to-head, single-player scout and picker options; `analysePlayer` is shared by both; 30-min cache), `fplMappers` (shared FPL helpers: `positionOf`, `upcomingFixturesByTeam`), `projectionModel` (pure predicted-points model: scoring rules, club strength, minutes; shared by the live service and the backtest), `projectionService` (`/api/projections`: squad + top players per position; 30-min cache), `backtest` (pure: replays a past season through the model), `cachedResponse` (the `response_cache` read-through helper).
-  - `src/scripts/backtest.ts` — `npm run backtest [-- <season>]`: scores the model against a past season in SQLite.
-  - `src/models/` — `fpl.ts` (raw FPL API shapes, only the fields we use), `team.ts` / `auth.ts` / `headToHead.ts` / `projections.ts` (our API contract).
-  - `src/middleware/` — `requireAuth`, error handler.
-  - `test/` — end-to-end Mocha specs, one per endpoint group (`*.test.ts`, run through tsx), `test/helpers/namespace.ts` (typed client for every endpoint, `loginAsAdmin`, `useTestEnvironment`, `withTeamId` / `withoutAdminCredentials` / `withClockAhead`), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/setup.ts` (in-memory DB + mock team ID).
+  - `src/` is organised by feature: `auth/`, `team/`, `headToHead/`, `projections/` (each with `routes.ts`, a service, pure logic and `models.ts` for its API types), plus `fpl/` (FPL API client + raw payload types), `history/` (past seasons in SQLite), `db/` (connection, migrations, response cache), `utils/`, `scripts/`. `src/routes.ts` mounts the feature routers; `src/config.ts` holds all configuration. **Each folder has a short `CLAUDE.md`**; read it before working there.
+  - `test/` — end-to-end Mocha specs, one per endpoint group (`*.test.ts`, run through tsx), `test/helpers/namespace.ts` (`apiClient` with a method per endpoint, `loginAsAdmin`, `useTestEnvironment`, `withTeamId` / `withoutAdminCredentials` / `withClockAhead`), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/setup.ts` (in-memory DB + mock team ID).
 - `app/client/` — React 19 + Vite + TypeScript SPA.
   - `src/api.ts` — the only place that calls `fetch`; handles the bearer token.
-  - `src/types.ts` — **mirror of `app/server/src/models/team.ts`, `auth.ts`, `headToHead.ts` and `projections.ts`**. When you change the API contract, update both.
+  - `src/types.ts` — re-exports the server's `<feature>/models.ts` files (type-only), so the API contract is defined once. Add new feature models there.
   - `src/pages/` — `LoginPage`, `DashboardPage` (`#/`), `HeadToHeadPage` (`#/head-to-head`), `PredictionsPage` (`#/predictions`). `src/components/` — presentational pieces, incl. `NavBar`, `HeadToHeadCard` (used for squad and scouted players) `PlayerScout` (club → player picker at the bottom of Head-to-head) and `ProjectionTable` (predictions per gameweek with an expandable breakdown).
   - `src/hooks/` — `useHashRoute` (tiny hash router; add new pages to `ROUTES` and `NavBar`'s `LINKS`), `useApiResource` (load/refresh/error/401 handling for a page).
 
@@ -38,11 +30,12 @@ Always run `npm run typecheck` and `npm test` after changes.
 
 ## Conventions
 
-- TypeScript `strict` everywhere; no `any` — type FPL payloads in `models/fpl.ts`.
+- TypeScript `strict` everywhere; no `any` — type FPL payloads in `fpl/models.ts`.
 - Never call the FPL API from the browser (CORS + rate limits). Go through `fplClient`, which caches responses; finished gameweeks are cached much longer than live data.
 - Prices from FPL are integers in tenths of £m (`now_cost: 105` = £10.5m). Convert in `teamService`, not in the client.
-- Throw `HttpError` (from `utils/httpError.ts`) for expected failures; the error middleware turns it into `{ "error": string }` JSON.
-- Keep scoring rules (multipliers, autosubs, captaincy) in `pointsCalculator.ts` as pure functions, covered through the endpoint tests (`team.test.ts` checks "points for me"). Prediction rules live in `projectionModel.ts`, also pure; check model changes with `npm run backtest` and record the numbers in the spec.
+- Throw `HttpError` (from `utils/http.ts`) for expected failures; the error middleware turns it into `{ "error": string }` JSON.
+- Keep scoring rules (multipliers, autosubs, captaincy) in `team/pointsCalculator.ts` as pure functions, covered through the endpoint tests (`team.test.ts` checks "points for me"). Prediction rules live in `projections/projectionModel.ts`, also pure; check model changes with `npm run backtest` and record the numbers in the spec.
+- Route handlers stay thin (parse, `requireAuth`, call the service); cache responses with `cachedResponse` from `db/responseCache.ts`.
 - Plain CSS in `app/client/src/styles.css`; no UI framework.
 - Schema changes: **append** a new SQL string to `MIGRATIONS` in `src/db/database.ts`; never edit an existing entry.
 - Match players and clubs across seasons by `code`, never by `id` (FPL re-numbers ids every season).
@@ -55,9 +48,9 @@ Always run `npm run typecheck` and `npm test` after changes.
 - Admin credentials come from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (no defaults; the server exits on startup without them, and `authService.login` rejects everything if they're empty). Never commit real values; tests set their own in `test/setup.ts`. Sessions are in memory and are lost on restart.
 - `node:sqlite` is still flagged experimental in Node 22; scripts pass `--disable-warning=ExperimentalWarning`. The DB lives in `app/server/data/` (gitignored); deleting it is safe.
 - `config.ts` reads env vars at import time, which is why `test/setup.ts` sets `DATABASE_PATH`, `FPL_TEAM_ID` and the admin credentials before any spec loads.
-- After changing the shape of `TeamSnapshot`, existing cached rows have the old shape until they expire — delete `app/server/data/` locally.
+- After changing the shape of a cached response, existing `response_cache` rows have the old shape until they expire (30 min) — delete `app/server/data/` locally.
 - `FPL_TEAM_ID` must be set (env var or `config.ts`) or `/api/team` returns a 500 explaining so.
-- Migration 3 (spec 003) forgets imported seasons and clears both response caches, so the first load after upgrading downloads past seasons again (~5 s).
+- Migration 3 (spec 003) forgets imported seasons and clears the caches, so the first load after upgrading downloads past seasons again (~5 s). Migration 4 drops `team_cache`; the team now lives in `response_cache` too.
 - Past-season data comes from github.com/vaastav/Fantasy-Premier-League (`config.history.baseUrl`). It is imported once per season into SQLite; to force a re-import, delete `app/server/data/`.
 - The FPL API is unofficial and undocumented; fields can change between seasons. It may return 503 while gameweeks are being updated.
 - Specs live in [docs/specs/](docs/specs/), one file per major update (`NNN-short-name.md`). Start a big change by copying `docs/specs/_template.md` to the next number. Keep the active spec up to date: move items to "Done" as you complete them. Don't rewrite finished specs. Later specs supersede earlier ones. See [docs/specs/README.md](docs/specs/README.md).

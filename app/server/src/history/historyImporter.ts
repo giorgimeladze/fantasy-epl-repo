@@ -1,10 +1,10 @@
 import { config } from '../config.js';
-import { fixtureHistoryRepository } from '../db/fixtureHistoryRepository.js';
-import type { FplBootstrap } from '../models/fpl.js';
-import type { FixtureRecord } from '../models/headToHead.js';
-import type { Position } from '../models/team.js';
+import { fixtureHistoryRepository } from './fixtureHistoryRepository.js';
+import type { FplBootstrap } from '../fpl/models.js';
+import type { FixtureRecord } from '../headToHead/models.js';
+import type { Position } from '../team/models.js';
 import { parseCsv } from '../utils/csv.js';
-import { HttpError } from '../utils/httpError.js';
+import { HttpError } from '../utils/http.js';
 
 /** "2025-26" for 2025. */
 export function seasonLabel(startYear: number): string {
@@ -46,7 +46,7 @@ const nullableFloat = (value: string | undefined): number | null =>
 const POSITIONS: Record<string, Position> = { GK: 'GK', GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
 
 /** Turns one season's CSV files (merged_gw, players_raw, teams) into fixture records. */
-export function buildSeasonRecords(
+function buildSeasonRecords(
   season: string,
   mergedGwCsv: string,
   playersRawCsv: string,
@@ -111,13 +111,13 @@ async function importSeason(season: string): Promise<boolean> {
     fetchText(`${base}/teams.csv`),
   ]);
   if (mergedGw === null || playersRaw === null || teams === null) {
-    console.warn(`Historical data for ${season} is not available; skipping.`);
+    if (config.history.logImports) console.warn(`Historical data for ${season} is not available; skipping.`);
     return false;
   }
 
   const records = buildSeasonRecords(season, mergedGw, playersRaw, teams);
   fixtureHistoryRepository().saveSeason(season, records);
-  console.log(`Imported ${records.length} fixture rows for ${season}.`);
+  if (config.history.logImports) console.log(`Imported ${records.length} fixture rows for ${season}.`);
   return true;
 }
 

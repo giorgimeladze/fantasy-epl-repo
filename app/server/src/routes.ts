@@ -1,10 +1,9 @@
+// The /api router: mounts each feature's routes. Handlers live in <feature>/routes.ts.
 import { Router } from 'express';
-import type { LoginRequest } from './models/auth.js';
-import { requireAuth } from './middleware/requireAuth.js';
-import { authService } from './services/authService.js';
-import { headToHeadService } from './services/headToHeadService.js';
-import { projectionService } from './services/projectionService.js';
-import { teamService } from './services/teamService.js';
+import { authRoutes } from './auth/routes.js';
+import { headToHeadRoutes } from './headToHead/routes.js';
+import { projectionRoutes } from './projections/routes.js';
+import { teamRoutes } from './team/routes.js';
 
 export const router = Router();
 
@@ -12,61 +11,10 @@ router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-router.post('/auth/login', (req, res) => {
-  const { username, password } = (req.body ?? {}) as Partial<LoginRequest>;
-  if (typeof username !== 'string' || typeof password !== 'string') {
-    res.status(400).json({ error: 'username and password are required' });
-    return;
-  }
-
-  const result = authService.login(username, password);
-  if (!result) {
-    res.status(401).json({ error: 'Invalid username or password' });
-    return;
-  }
-  res.json(result);
-});
-
-router.get('/auth/session', requireAuth, (_req, res) => {
-  res.json({ username: res.locals.session.username });
-});
-
-router.post('/auth/logout', requireAuth, (_req, res) => {
-  authService.logout(res.locals.token);
-  res.status(204).end();
-});
-
-// Served from the SQLite cache for 30 minutes; ?refresh=true forces a fresh fetch from FPL.
-router.get('/team', requireAuth, async (req, res) => {
-  const forceRefresh = req.query.refresh === 'true';
-  res.json(await teamService.getMyTeam(undefined, { forceRefresh }));
-});
-
-// Last matches vs each player's next opponent. Same 30-minute cache and ?refresh=true as /team.
-router.get('/head-to-head', requireAuth, async (req, res) => {
-  const forceRefresh = req.query.refresh === 'true';
-  res.json(await headToHeadService.getHeadToHead(undefined, { forceRefresh }));
-});
-
-router.get('/head-to-head/options', requireAuth, async (_req, res) => {
-  res.json(await headToHeadService.getScoutOptions());
-});
-
-router.get('/head-to-head/players/:id', requireAuth, async (req, res) => {
-  const playerId = Number(req.params.id);
-  if (!Number.isInteger(playerId) || playerId <= 0) {
-    res.status(400).json({ error: 'Player id must be a positive integer' });
-    return;
-  }
-  const forceRefresh = req.query.refresh === 'true';
-  res.json(await headToHeadService.getPlayerHeadToHead(playerId, { forceRefresh }));
-});
-
-// Predicted points for the next gameweeks (squad + top players per position). Same cache and ?refresh=true.
-router.get('/projections', requireAuth, async (req, res) => {
-  const forceRefresh = req.query.refresh === 'true';
-  res.json(await projectionService.getProjections(undefined, { forceRefresh }));
-});
+router.use('/auth', authRoutes);
+router.use('/team', teamRoutes);
+router.use('/head-to-head', headToHeadRoutes);
+router.use('/projections', projectionRoutes);
 
 // Unknown /api routes get JSON, not the SPA fallback.
 router.use((_req, res) => {

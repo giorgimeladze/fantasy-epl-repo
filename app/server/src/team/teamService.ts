@@ -1,11 +1,11 @@
 import { config } from '../config.js';
-import type { FplBootstrap, FplElement, FplPick } from '../models/fpl.js';
-import { teamCacheRepository } from '../db/teamCacheRepository.js';
-import type { MyTeamResponse, PlayerView, TeamSnapshot, UpcomingFixture } from '../models/team.js';
-import { HttpError } from '../utils/httpError.js';
+import { cachedResponse } from '../db/responseCache.js';
+import type { FplBootstrap, FplElement, FplPick } from '../fpl/models.js';
+import type { MyTeamResponse, PlayerView, TeamSnapshot, UpcomingFixture } from './models.js';
+import { HttpError } from '../utils/http.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
-import { fplClient } from './fplClient.js';
-import { positionOf, upcomingFixturesByTeam } from './fplMappers.js';
+import { fplClient } from '../fpl/fplClient.js';
+import { positionOf, upcomingFixturesByTeam } from '../fpl/fplMappers.js';
 import { type GameweekData, pointsContributed } from './pointsCalculator.js';
 
 const tenths = (value: number): number => value / 10;
@@ -136,39 +136,13 @@ async function fetchSnapshot(teamId: number): Promise<TeamSnapshot> {
   };
 }
 
-export interface GetMyTeamOptions {
-  /** Skip the SQLite cache and fetch fresh data from FPL. */
-  forceRefresh?: boolean;
-}
-
 export const teamService = {
+  /** The manager's squad, summary and current gameweek. Cached in SQLite for config.db.cacheTtlMs. */
   async getMyTeam(
     teamId: number = config.fpl.teamId,
-    { forceRefresh = false }: GetMyTeamOptions = {},
+    { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<MyTeamResponse> {
-    if (!teamId) {
-      throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env.');
-    }
-
-    const ttl = config.db.teamCacheTtlMs;
-    const cache = teamCacheRepository();
-
-    const cached = forceRefresh ? null : cache.get(teamId);
-    if (cached && Date.now() - cached.fetchedAt < ttl) {
-      return { ...cached.snapshot, cache: cacheInfo(true, cached.fetchedAt, ttl) };
-    }
-
-    const snapshot = await fetchSnapshot(teamId);
-    const fetchedAt = Date.now();
-    cache.save(teamId, snapshot, fetchedAt);
-    return { ...snapshot, cache: cacheInfo(false, fetchedAt, ttl) };
+    if (!teamId) throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env.');
+    return cachedResponse(`team:${teamId}`, config.db.cacheTtlMs, forceRefresh, () => fetchSnapshot(teamId));
   },
 };
-
-function cacheInfo(fromCache: boolean, fetchedAt: number, ttl: number): MyTeamResponse['cache'] {
-  return {
-    fromCache,
-    fetchedAt: new Date(fetchedAt).toISOString(),
-    expiresAt: new Date(fetchedAt + ttl).toISOString(),
-  };
-}

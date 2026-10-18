@@ -1,10 +1,10 @@
 // Scores the predicted-points model against a past season: `npm run backtest [-- 2025-26]`.
 // Downloads past seasons into SQLite first if they aren't there yet.
 import { config } from '../config.js';
-import { fixtureHistoryRepository } from '../db/fixtureHistoryRepository.js';
-import type { Position } from '../models/team.js';
-import { type BacktestScores, runBacktest } from '../services/backtest.js';
-import { historyImporter, previousSeasons, seasonLabel } from '../services/historyImporter.js';
+import { fixtureHistoryRepository } from '../history/fixtureHistoryRepository.js';
+import type { Position } from '../team/models.js';
+import { type BacktestScores, runBacktest } from '../projections/backtest.js';
+import { historyImporter, previousSeasons, seasonLabel } from '../history/historyImporter.js';
 
 const now = new Date();
 const startYear = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;

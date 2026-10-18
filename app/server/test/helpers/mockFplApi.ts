@@ -3,7 +3,7 @@
 // - past-season CSV requests are answered from test/mocks/history/<season>/
 import { existsSync, readFileSync } from 'node:fs';
 import { config } from '../../src/config.js';
-import { fplClient } from '../../src/services/fplClient.js';
+import { fplClient } from '../../src/fpl/fplClient.js';
 
 const FPL_MOCKS = new URL('../mocks/fpl/', import.meta.url);
 const HISTORY_MOCKS = new URL('../mocks/history/', import.meta.url);

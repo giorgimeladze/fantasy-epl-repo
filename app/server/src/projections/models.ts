@@ -1,5 +1,5 @@
-// Response contract for GET /api/projections. Mirrored in client/src/types.ts.
-import type { CacheInfo, Position } from './team.js';
+// Response contract for GET /api/projections. Re-exported by app/client/src/types.ts: types only.
+import type { CacheInfo, Position } from '../team/models.js';
 
 /** Expected FPL points from each scoring rule, for one fixture. Sums to `points`. */
 export interface PointsBreakdown {

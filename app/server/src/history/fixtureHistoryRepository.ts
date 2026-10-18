@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { FixtureRecord } from '../models/headToHead.js';
-import type { Position } from '../models/team.js';
-import { getDatabase } from './database.js';
+import type { FixtureRecord } from '../headToHead/models.js';
+import type { Position } from '../team/models.js';
+import { getDatabase } from '../db/database.js';
 
 interface FixtureRow {
   season: string;
@@ -121,7 +121,7 @@ function fromRow(row: FixtureRow): FixtureRecord {
   };
 }
 
-export function createFixtureHistoryRepository(db: DatabaseSync) {
+function createFixtureHistoryRepository(db: DatabaseSync) {
   return {
     importedSeasons(): string[] {
       const rows = db.prepare('SELECT season FROM history_import ORDER BY season DESC').all() as { season: string }[];
@@ -250,7 +250,7 @@ export function createFixtureHistoryRepository(db: DatabaseSync) {
   };
 }
 
-export type FixtureHistoryRepository = ReturnType<typeof createFixtureHistoryRepository>;
+type FixtureHistoryRepository = ReturnType<typeof createFixtureHistoryRepository>;
 
 let instance: FixtureHistoryRepository | null = null;
 

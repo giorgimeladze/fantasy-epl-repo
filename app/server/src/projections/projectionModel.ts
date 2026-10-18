@@ -1,8 +1,8 @@
 // Pure predicted-points model (spec 003). No I/O: projectionService feeds it live FPL data and
 // backtest feeds it past seasons, so both are scored by exactly the same rules.
-import type { OpponentRecord } from '../db/fixtureHistoryRepository.js';
-import type { PointsBreakdown } from '../models/projections.js';
-import type { Position } from '../models/team.js';
+import type { OpponentRecord } from '../history/fixtureHistoryRepository.js';
+import type { PointsBreakdown } from './models.js';
+import type { Position } from '../team/models.js';
 
 // FPL 2025-26 scoring rules.
 const GOAL_POINTS: Record<Position, number> = { GK: 10, DEF: 6, MID: 5, FWD: 4 };
@@ -206,7 +206,7 @@ function poisson(mean: number, n: number): number {
 }
 
 /** E[floor(X / every)] for X ~ Poisson(mean): "1 point per 3 saves", "−1 per 2 goals conceded". */
-export function expectedPerEvery(mean: number, every: number): number {
+function expectedPerEvery(mean: number, every: number): number {
   if (mean <= 0) return 0;
   const max = Math.ceil(mean + 10 * Math.sqrt(mean) + 10);
   let total = 0;
@@ -215,7 +215,7 @@ export function expectedPerEvery(mean: number, every: number): number {
 }
 
 /** P(X ≥ threshold) for X ~ Poisson(mean). */
-export function chanceAtLeast(mean: number, threshold: number): number {
+function chanceAtLeast(mean: number, threshold: number): number {
   let below = 0;
   for (let n = 0; n < threshold; n++) below += poisson(mean, n);
   return clamp(1 - below, 0, 1);

@@ -1,6 +1,6 @@
 import { config } from '../config.js';
-import type { FplBootstrap, FplElement, FplFixture } from '../models/fpl.js';
-import type { Position, UpcomingFixture } from '../models/team.js';
+import type { FplBootstrap, FplElement, FplFixture } from './models.js';
+import type { Position, UpcomingFixture } from '../team/models.js';
 
 const POSITIONS: Record<string, Position> = { GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
 

@@ -61,6 +61,8 @@ const MIGRATIONS: string[] = [
    DELETE FROM history_import;
    DELETE FROM team_cache;
    DELETE FROM response_cache`,
+  // The team snapshot moved into response_cache (key "team:<id>").
+  `DROP TABLE team_cache`,
 ];
 
 function migrate(db: DatabaseSync): void {
@@ -78,7 +80,7 @@ function migrate(db: DatabaseSync): void {
   }
 }
 
-export function openDatabase(filePath: string): DatabaseSync {
+function openDatabase(filePath: string): DatabaseSync {
   if (filePath !== ':memory:') mkdirSync(path.dirname(filePath), { recursive: true });
   const db = new DatabaseSync(filePath);
   db.exec('PRAGMA journal_mode = WAL');
@@ -92,9 +94,4 @@ let instance: DatabaseSync | null = null;
 export function getDatabase(): DatabaseSync {
   instance ??= openDatabase(config.db.path);
   return instance;
-}
-
-export function closeDatabase(): void {
-  instance?.close();
-  instance = null;
 }

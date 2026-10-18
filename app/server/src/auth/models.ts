@@ -1,4 +1,4 @@
-// Auth contract. Mirrored in client/src/types.ts.
+// Auth contract. Re-exported by app/client/src/types.ts: types only.
 
 export interface LoginRequest {
   username: string;

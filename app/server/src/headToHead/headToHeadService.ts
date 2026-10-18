@@ -1,22 +1,22 @@
 import { config } from '../config.js';
-import { fixtureHistoryRepository } from '../db/fixtureHistoryRepository.js';
-import type { FplBootstrap, FplElement, FplElementHistory, FplTeam } from '../models/fpl.js';
+import { fixtureHistoryRepository } from '../history/fixtureHistoryRepository.js';
+import type { FplBootstrap, FplElement, FplElementHistory, FplTeam } from '../fpl/models.js';
 import type {
   FixtureRecord,
   HeadToHeadResponse,
   PlayerHeadToHead,
   PlayerHeadToHeadResponse,
   ScoutOptionsResponse,
-} from '../models/headToHead.js';
-import type { Position, UpcomingFixture } from '../models/team.js';
-import { HttpError } from '../utils/httpError.js';
+} from './models.js';
+import type { Position, UpcomingFixture } from '../team/models.js';
+import { HttpError } from '../utils/http.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
-import { cachedResponse } from './cachedResponse.js';
-import { fplClient } from './fplClient.js';
-import { positionOf, upcomingFixturesByTeam } from './fplMappers.js';
+import { cachedResponse } from '../db/responseCache.js';
+import { fplClient } from '../fpl/fplClient.js';
+import { positionOf, upcomingFixturesByTeam } from '../fpl/fplMappers.js';
 import { summarize, toMatch } from './headToHeadInsights.js';
-import { currentSeasonStartYear, historyImporter, previousSeasons, seasonLabel } from './historyImporter.js';
-import { teamService } from './teamService.js';
+import { currentSeasonStartYear, historyImporter, previousSeasons, seasonLabel } from '../history/historyImporter.js';
+import { teamService } from '../team/teamService.js';
 
 type HeadToHeadSnapshot = Omit<HeadToHeadResponse, 'cache'>;
 type PlayerSnapshot = Omit<PlayerHeadToHeadResponse, 'cache'>;
@@ -173,13 +173,13 @@ export const headToHeadService = {
   /**
    * For every squad player: their last N appearances against their next opponent,
    * across this season (live FPL) and previous seasons (SQLite history).
-   * Cached in SQLite for config.db.headToHeadCacheTtlMs.
+   * Cached in SQLite for config.db.cacheTtlMs.
    */
   getHeadToHead(
     teamId: number = config.fpl.teamId,
     { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<HeadToHeadResponse> {
-    return cachedResponse(`head-to-head:${teamId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
+    return cachedResponse(`head-to-head:${teamId}`, config.db.cacheTtlMs, forceRefresh, () =>
       buildSquadSnapshot(teamId, forceRefresh),
     );
   },
@@ -189,7 +189,7 @@ export const headToHeadService = {
     playerId: number,
     { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<PlayerHeadToHeadResponse> {
-    return cachedResponse(`head-to-head:player:${playerId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
+    return cachedResponse(`head-to-head:player:${playerId}`, config.db.cacheTtlMs, forceRefresh, () =>
       buildPlayerSnapshot(playerId),
     );
   },

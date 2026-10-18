@@ -76,7 +76,7 @@ The first time your team loads, the server fetches it from the FPL API and store
 - The dashboard shows when the data was fetched and whether it came from the cache.
 - The **Refresh** button skips the cache (`GET /api/team?refresh=true`) and saves fresh data.
 - To wipe the cache, stop the server and delete `app/server/data/`.
-- To change the 30-minute TTL, edit `config.db.teamCacheTtlMs` in [`app/server/src/config.ts`](app/server/src/config.ts).
+- To change the 30-minute TTL, edit `config.db.cacheTtlMs` (shared by all data endpoints) in [`app/server/src/config.ts`](app/server/src/config.ts).
 - The Head-to-head page is cached the same way (`config.db.headToHeadCacheTtlMs`), with its own Refresh button.
 
 ### Match history

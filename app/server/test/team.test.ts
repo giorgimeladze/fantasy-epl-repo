@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { config } from '../src/config.js';
-import type { PlayerView } from '../src/models/team.js';
+import type { PlayerView } from '../src/team/models.js';
 import { fplCalls, MOCK_TEAM_ID, mockFplApi, resetCalls } from './helpers/mockFplApi.js';
 import { type ApiClient, loginAsAdmin, useTestEnvironment, withClockAhead, withTeamId } from './helpers/namespace.js';
 
@@ -122,7 +122,7 @@ describe('GET /api/team', () => {
       assert.ok(fplCalls.length > 0);
       assert.equal(
         Date.parse(first.body.cache.expiresAt) - Date.parse(first.body.cache.fetchedAt),
-        config.db.teamCacheTtlMs,
+        config.db.cacheTtlMs,
       );
 
       resetCalls();
@@ -138,7 +138,7 @@ describe('GET /api/team', () => {
       await admin.team();
       resetCalls();
 
-      const later = await withClockAhead(config.db.teamCacheTtlMs + 1000, () => admin.team());
+      const later = await withClockAhead(config.db.cacheTtlMs + 1000, () => admin.team());
 
       assert.equal(later.body.cache.fromCache, false);
       assert.ok(fplCalls.includes(`/entry/${MOCK_TEAM_ID}/`));

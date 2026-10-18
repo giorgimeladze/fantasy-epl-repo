@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { config } from '../config.js';
-import type { LoginResponse, Session } from '../models/auth.js';
+import type { LoginResponse, Session } from './models.js';
 
 const sessions = new Map<string, Session>();
 

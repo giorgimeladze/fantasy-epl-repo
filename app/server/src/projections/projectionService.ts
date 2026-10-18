@@ -1,17 +1,17 @@
 import { config } from '../config.js';
-import { fixtureHistoryRepository, type HeadToHeadAverages } from '../db/fixtureHistoryRepository.js';
-import type { FplBootstrap, FplElement, FplFixture } from '../models/fpl.js';
+import { fixtureHistoryRepository, type HeadToHeadAverages } from '../history/fixtureHistoryRepository.js';
+import type { FplBootstrap, FplElement, FplFixture } from '../fpl/models.js';
 import type {
   FixtureProjection,
   PlayerProjection,
   PointsBreakdown,
   ProjectionsResponse,
-} from '../models/projections.js';
-import type { Position } from '../models/team.js';
-import { cachedResponse } from './cachedResponse.js';
-import { fplClient } from './fplClient.js';
-import { positionOf } from './fplMappers.js';
-import { currentSeasonStartYear, historyImporter, previousSeasons, seasonLabel } from './historyImporter.js';
+} from './models.js';
+import type { Position } from '../team/models.js';
+import { cachedResponse } from '../db/responseCache.js';
+import { fplClient } from '../fpl/fplClient.js';
+import { positionOf } from '../fpl/fplMappers.js';
+import { currentSeasonStartYear, historyImporter, previousSeasons, seasonLabel } from '../history/historyImporter.js';
 import {
   availabilityFor,
   type ClubTotals,
@@ -23,7 +23,7 @@ import {
   projectFixture,
   strengthOf,
 } from './projectionModel.js';
-import { teamService } from './teamService.js';
+import { teamService } from '../team/teamService.js';
 
 type ProjectionsSnapshot = Omit<ProjectionsResponse, 'cache'>;
 
@@ -33,7 +33,7 @@ const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
 const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD'];
 
 /** The next `count` gameweeks, starting with the one after the current. */
-export function upcomingGameweeks(bootstrap: FplBootstrap, count: number): number[] {
+function upcomingGameweeks(bootstrap: FplBootstrap, count: number): number[] {
   const next = bootstrap.events.find((e) => e.is_next);
   if (!next) return [];
   return bootstrap.events
@@ -44,7 +44,7 @@ export function upcomingGameweeks(bootstrap: FplBootstrap, count: number): numbe
 }
 
 /** This season's xG for and against per club (by short name), from bootstrap players and finished fixtures. */
-export function clubTotalsThisSeason(bootstrap: FplBootstrap, fixtures: FplFixture[]): Map<string, ClubTotals> {
+function clubTotalsThisSeason(bootstrap: FplBootstrap, fixtures: FplFixture[]): Map<string, ClubTotals> {
   const totals = new Map<number, ClubTotals>(
     bootstrap.teams.map((t) => [t.id, { matches: 0, goalsFor: 0, goalsAgainst: 0 }]),
   );
@@ -94,7 +94,7 @@ interface ProjectionInputs {
 }
 
 /** Projections for every player in the game, by element id. */
-export function projectAll(
+function projectAll(
   inputs: ProjectionInputs,
   pickPositions: Map<number, number>,
 ): Map<number, PlayerProjection> {
@@ -230,13 +230,13 @@ async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<Pro
 export const projectionService = {
   /**
    * Predicted points for the next gameweeks: the manager's squad plus the top players per position.
-   * Cached in SQLite for config.db.projectionsCacheTtlMs.
+   * Cached in SQLite for config.db.cacheTtlMs.
    */
   getProjections(
     teamId: number = config.fpl.teamId,
     { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<ProjectionsResponse> {
-    return cachedResponse(`projections:${teamId}`, config.db.projectionsCacheTtlMs, forceRefresh, () =>
+    return cachedResponse(`projections:${teamId}`, config.db.cacheTtlMs, forceRefresh, () =>
       buildSnapshot(teamId, forceRefresh),
     );
   },

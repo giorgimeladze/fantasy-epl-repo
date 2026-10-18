@@ -1,6 +1,6 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
-import { authService } from './services/authService.js';
+import { authService } from './auth/authService.js';
 
 if (!authService.isConfigured()) {
   console.error('ADMIN_USERNAME and ADMIN_PASSWORD must be set (see .env.example).');

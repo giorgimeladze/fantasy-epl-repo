@@ -1,8 +1,8 @@
 // Replays a past season through projectionModel, one gameweek at a time, using only what was known
 // before each gameweek. Pure: the caller loads the records (see src/scripts/backtest.ts).
-import type { HeadToHeadAverages } from '../db/fixtureHistoryRepository.js';
-import type { FixtureRecord } from '../models/headToHead.js';
-import type { Position } from '../models/team.js';
+import type { HeadToHeadAverages } from '../history/fixtureHistoryRepository.js';
+import type { FixtureRecord } from '../headToHead/models.js';
+import type { Position } from '../team/models.js';
 import {
   type ClubTotals,
   clubStrengths,

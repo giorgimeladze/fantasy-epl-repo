@@ -4,8 +4,8 @@ import type {
   HeadToHeadSummary,
   Insight,
   Verdict,
-} from '../models/headToHead.js';
-import type { Position } from '../models/team.js';
+} from './models.js';
+import type { Position } from '../team/models.js';
 
 // Average points per meeting that count as a good / poor record against an opponent.
 const GOOD_AVERAGE = 6;
@@ -16,7 +16,7 @@ const DEFENSIVE_CONTRIBUTION_THRESHOLD: Partial<Record<Position, number>> = { DE
 
 const plural = (n: number, one: string, many: string): string => (n === 1 ? one : `${n} ${many}`);
 
-export function matchResult(record: FixtureRecord): HeadToHeadMatch['result'] {
+function matchResult(record: FixtureRecord): HeadToHeadMatch['result'] {
   if (record.teamHScore === null || record.teamAScore === null) return null;
   const [scored, conceded] = record.wasHome
     ? [record.teamHScore, record.teamAScore]
@@ -27,7 +27,7 @@ export function matchResult(record: FixtureRecord): HeadToHeadMatch['result'] {
 }
 
 /** What earned or cost the player points in one fixture, using FPL scoring rules for their position. */
-export function matchInsights(record: FixtureRecord, position: Position): Insight[] {
+function matchInsights(record: FixtureRecord, position: Position): Insight[] {
   const good: Insight[] = [];
   const bad: Insight[] = [];
   const defensive = position === 'GK' || position === 'DEF';

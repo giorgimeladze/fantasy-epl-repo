@@ -1,4 +1,4 @@
-// Response contract for GET /api/team. Mirrored in client/src/types.ts.
+// Response contract for GET /api/team. Re-exported by app/client/src/types.ts: types only.
 
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
 
