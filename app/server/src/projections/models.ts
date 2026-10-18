@@ -22,6 +22,7 @@ export interface FixtureProjection {
   breakdown: PointsBreakdown;
   expectedMinutes: number;
   startChance: number; // 0–1
+  playChance: number; // 0–1, starts or comes on as a sub
   cleanSheetChance: number; // 0–1, the club keeping one (whether or not the player is on the pitch)
   expectedGoals: number; // the player's
   expectedAssists: number;
@@ -32,6 +33,7 @@ export interface FixtureProjection {
 export interface GameweekProjection {
   gameweek: number;
   points: number; // sum over fixtures; 0 in a blank gameweek
+  playChance: number; // 0–1, plays in at least one fixture; 0 in a blank gameweek
   fixtures: FixtureProjection[]; // empty = blank, 2 = double gameweek
 }
 
@@ -41,10 +43,12 @@ export interface PlayerProjection {
   position: Position;
   clubShortName: string;
   price: number; // £m
-  status: string;
+  status: string; // FPL: "a" available, "d" doubtful, "i" injured, "s" suspended, "u" unavailable
   news: string;
+  chanceOfPlaying: number | null; // FPL's % chance of playing next round; null = no flag
   pickPosition: number | null; // null when not in the manager's squad
   fplExpectedPoints: number | null; // FPL's own forecast for the next gameweek (ep_next)
+  selectedByPercent: number; // share of FPL managers who own the player
   gameweeks: GameweekProjection[]; // one per gameweek in ProjectionsResponse.gameweeks
   nextGameweekPoints: number;
   horizonPoints: number; // sum over all gameweeks
@@ -55,5 +59,7 @@ export interface ProjectionsResponse {
   squad: PlayerProjection[]; // by pick position
   /** Highest `horizonPoints` per position across the league, squad players included. */
   top: Record<Position, PlayerProjection[]>;
+  /** Players not in the squad, owned by under config.projections.differentialMaxOwnership %, by `horizonPoints`. */
+  differentials: Record<Position, PlayerProjection[]>;
   cache: CacheInfo;
 }

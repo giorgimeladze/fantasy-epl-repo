@@ -2,8 +2,9 @@ import { ROUTES, type Route } from '../hooks/useHashRoute.ts';
 
 const LINKS: Array<{ route: Route; label: string }> = [
   { route: 'team', label: 'My team' },
-  { route: 'head-to-head', label: 'Head-to-head' },
+  { route: 'next-gameweek', label: 'Next GW' },
   { route: 'predictions', label: 'Predictions' },
+  { route: 'head-to-head', label: 'Head-to-head' },
 ];
 
 interface Props {

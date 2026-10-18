@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { authRoutes } from './auth/routes.js';
 import { headToHeadRoutes } from './headToHead/routes.js';
+import { nextGameweekRoutes } from './nextGameweek/routes.js';
 import { projectionRoutes } from './projections/routes.js';
 import { teamRoutes } from './team/routes.js';
 
@@ -15,6 +16,7 @@ router.use('/auth', authRoutes);
 router.use('/team', teamRoutes);
 router.use('/head-to-head', headToHeadRoutes);
 router.use('/projections', projectionRoutes);
+router.use('/next-gameweek', nextGameweekRoutes);
 
 // Unknown /api routes get JSON, not the SPA fallback.
 router.use((_req, res) => {

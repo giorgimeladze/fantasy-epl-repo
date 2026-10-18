@@ -50,9 +50,23 @@ export interface FplElement {
   red_cards: number;
   defensive_contribution: number;
   ep_next: string | null; // FPL's own forecast for the next gameweek
+  cost_change_event: number; // price change this gameweek, tenths of £m
+  transfers_in_event: number;
+  transfers_out_event: number;
+  // FPL's own price-change outlook (appeared in 2026-27; optional in case it disappears again).
+  price_change_percent?: string; // progress towards the next change; ±100 = it changes
+  price_change_projections?: FplPriceChangeProjection[];
+  price_change_locked_until?: string | null; // no further change before this time
   status: string; // "a" available, "d" doubtful, "i" injured, "s" suspended, "u" unavailable, "n" not in squad
   news: string;
   chance_of_playing_next_round: number | null;
+}
+
+/** One upcoming price update (offset 0 = the next one, normally overnight). */
+export interface FplPriceChangeProjection {
+  offset: number;
+  projected_percent: string;
+  likelihood: number; // −5 (fall almost certain) … 5 (rise almost certain)
 }
 
 export interface FplBootstrap {

@@ -47,7 +47,7 @@ describe('GET /api/projections', () => {
     assert.ok(Math.abs(gw5.points - (gw5.fixtures[0]!.points + gw5.fixtures[1]!.points)) < 0.011);
     assert.ok(gw5.points > raya.gameweeks[1]!.points);
 
-    assert.deepEqual(haaland.gameweeks[2], { gameweek: 5, points: 0, fixtures: [] });
+    assert.deepEqual(haaland.gameweeks[2], { gameweek: 5, points: 0, playChance: 0, fixtures: [] });
   });
 
   it('explains each fixture with a breakdown that adds up to its points', async () => {
@@ -95,6 +95,30 @@ describe('GET /api/projections', () => {
     }
     assert.equal(byName(top.FWD, 'Isak').pickPosition, null);
     assert.equal(byName(top.FWD, 'Haaland').pickPosition, 10);
+  });
+
+  it('gives each gameweek a chance of playing, higher in a double gameweek', async () => {
+    const raya = byName((await admin.projections()).body.squad, 'Raya');
+    const [gw3, , gw5] = raya.gameweeks;
+
+    assert.equal(gw3!.playChance, gw3!.fixtures[0]!.playChance);
+    assert.ok(gw3!.fixtures[0]!.playChance >= gw3!.fixtures[0]!.startChance);
+    assert.ok(gw5!.playChance >= Math.max(...gw5!.fixtures.map((f) => f.playChance)));
+    assert.equal(byName((await admin.projections()).body.squad, 'Havertz').gameweeks[0]!.playChance, 0);
+  });
+
+  it('lists differentials: players outside the squad owned by under 10 %', async () => {
+    const body: ProjectionsResponse = (await admin.projections()).body;
+
+    // Isak (4.2 %) is the only player outside the squad in the mock league.
+    assert.deepEqual(
+      body.differentials.FWD.map((p) => [p.webName, p.selectedByPercent, p.pickPosition]),
+      [['Isak', 4.2, null]],
+    );
+    assert.deepEqual(body.differentials.MID, []);
+    // Squad players are never differentials, however few managers own them.
+    assert.ok(byName(body.squad, 'Raya').selectedByPercent < 10);
+    assert.ok(!Object.values(body.differentials).flat().some((p) => p.webName === 'Raya'));
   });
 
   it('serves repeat requests from the SQLite cache, and rebuilds on ?refresh=true', async () => {

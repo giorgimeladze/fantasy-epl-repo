@@ -154,6 +154,7 @@ function projectAll(
           breakdown: roundBreakdown(estimate.breakdown),
           expectedMinutes: Math.round(estimate.expectedMinutes),
           startChance: round2(estimate.startChance),
+          playChance: round2(estimate.playChance),
           cleanSheetChance: round2(estimate.cleanSheetChance),
           expectedGoals: round2(estimate.expectedGoals),
           expectedAssists: round2(estimate.expectedAssists),
@@ -163,6 +164,10 @@ function projectAll(
       return {
         gameweek,
         points: round2(fixtureProjections.reduce((sum, f) => sum + f.points, 0)),
+        // Fixtures treated as independent; a blank gameweek multiplies nothing and gives 0.
+        playChance: fixtureProjections.length
+          ? round2(1 - fixtureProjections.reduce((none, f) => none * (1 - f.playChance), 1))
+          : 0,
         fixtures: fixtureProjections,
       };
     });
@@ -175,8 +180,10 @@ function projectAll(
       price: e.now_cost / 10,
       status: e.status,
       news: e.news,
+      chanceOfPlaying: e.chance_of_playing_next_round,
       pickPosition: pickPositions.get(e.id) ?? null,
       fplExpectedPoints: e.ep_next === null ? null : num(e.ep_next),
+      selectedByPercent: num(e.selected_by_percent),
       gameweeks: projectedGameweeks,
       nextGameweekPoints: projectedGameweeks[0]?.points ?? 0,
       horizonPoints: round2(projectedGameweeks.reduce((sum, g) => sum + g.points, 0)),
@@ -214,17 +221,27 @@ async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<Pro
 
   const squad = team.players.flatMap((p) => projections.get(p.id) ?? []);
   const everyone = [...projections.values()];
-  const top = Object.fromEntries(
-    POSITIONS.map((position) => [
-      position,
-      everyone
-        .filter((p) => p.position === position)
-        .sort((a, b) => b.horizonPoints - a.horizonPoints || b.nextGameweekPoints - a.nextGameweekPoints)
-        .slice(0, config.projections.topPerPosition),
-    ]),
-  ) as Record<Position, PlayerProjection[]>;
+  const bestPerPosition = (players: PlayerProjection[], count: number) =>
+    Object.fromEntries(
+      POSITIONS.map((position) => [
+        position,
+        players
+          .filter((p) => p.position === position)
+          .sort((a, b) => b.horizonPoints - a.horizonPoints || b.nextGameweekPoints - a.nextGameweekPoints)
+          .slice(0, count),
+      ]),
+    ) as Record<Position, PlayerProjection[]>;
 
-  return { gameweeks, squad, top };
+  const differentials = everyone.filter(
+    (p) => p.pickPosition === null && p.selectedByPercent < config.projections.differentialMaxOwnership,
+  );
+
+  return {
+    gameweeks,
+    squad,
+    top: bestPerPosition(everyone, config.projections.topPerPosition),
+    differentials: bestPerPosition(differentials, config.projections.differentialsPerPosition),
+  };
 }
 
 export const projectionService = {

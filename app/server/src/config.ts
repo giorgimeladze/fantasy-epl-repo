@@ -28,6 +28,13 @@ export const config = {
   projections: {
     gameweeks: 5, // how many upcoming gameweeks to predict
     topPerPosition: 10,
+    differentialMaxOwnership: 10, // % of managers
+    differentialsPerPosition: 5,
+  },
+
+  nextGameweek: {
+    captainOptions: 3,
+    priceWatchPerList: 8, // league-wide risers / fallers shown
   },
 
   auth: {

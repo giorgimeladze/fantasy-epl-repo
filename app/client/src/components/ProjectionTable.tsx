@@ -118,11 +118,13 @@ interface Props {
   gameweeks: number[];
   /** Mark players in the manager's squad (for league-wide lists). */
   markSquad?: boolean;
+  /** Show the share of managers who own each player (for differentials). */
+  showOwnership?: boolean;
 }
 
-export function ProjectionTable({ players, gameweeks, markSquad = false }: Props) {
+export function ProjectionTable({ players, gameweeks, markSquad = false, showOwnership = false }: Props) {
   const [open, setOpen] = useState<number | null>(null);
-  const columns = gameweeks.length + 4;
+  const columns = gameweeks.length + (showOwnership ? 5 : 4);
 
   return (
     <div className="table-wrap">
@@ -131,6 +133,11 @@ export function ProjectionTable({ players, gameweeks, markSquad = false }: Props
           <tr>
             <th>Player</th>
             <th className="num">£</th>
+            {showOwnership && (
+              <th className="num" title="Share of FPL managers who own the player">
+                Sel %
+              </th>
+            )}
             <th className="num" title="FPL's own forecast for the next gameweek">
               FPL xP
             </th>
@@ -168,6 +175,7 @@ export function ProjectionTable({ players, gameweeks, markSquad = false }: Props
                     </div>
                   </td>
                   <td className="num">{p.price.toFixed(1)}</td>
+                  {showOwnership && <td className="num">{p.selectedByPercent.toFixed(1)}</td>}
                   <td className="num">{p.fplExpectedPoints === null ? '–' : pts(p.fplExpectedPoints)}</td>
                   {p.gameweeks.map((gw) => (
                     <GameweekCell key={gw.gameweek} gw={gw} />

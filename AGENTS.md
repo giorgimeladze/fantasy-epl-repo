@@ -7,12 +7,12 @@ Instructions for AI coding agents (Claude Code reads this via `CLAUDE.md`). Read
 npm workspaces monorepo:
 
 - `app/server/` — Node 22 + TypeScript + Express 5 API. ESM (`"type": "module"`, `module: nodenext`), so **relative imports must end in `.js`**.
-  - `src/` is organised by feature: `auth/`, `team/`, `headToHead/`, `projections/` (each with `routes.ts`, a service, pure logic and `models.ts` for its API types), plus `fpl/` (FPL API client + raw payload types), `history/` (past seasons in SQLite), `db/` (connection, migrations, response cache), `utils/`, `scripts/`. `src/routes.ts` mounts the feature routers; `src/config.ts` holds all configuration. **Each folder has a short `CLAUDE.md`**; read it before working there.
+  - `src/` is organised by feature: `auth/`, `team/`, `headToHead/`, `projections/`, `nextGameweek/` (each with `routes.ts`, a service, pure logic and `models.ts` for its API types), plus `fpl/` (FPL API client + raw payload types), `history/` (past seasons in SQLite), `db/` (connection, migrations, response cache), `utils/`, `scripts/`. `src/routes.ts` mounts the feature routers; `src/config.ts` holds all configuration. **Each folder has a short `CLAUDE.md`**; read it before working there.
   - `test/` — end-to-end Mocha specs, one per endpoint group (`*.test.ts`, run through tsx), `test/helpers/namespace.ts` (`apiClient` with a method per endpoint, `loginAsAdmin`, `useTestEnvironment`, `withTeamId` / `withoutAdminCredentials` / `withClockAhead`), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/setup.ts` (in-memory DB + mock team ID).
 - `app/client/` — React 19 + Vite + TypeScript SPA.
   - `src/api.ts` — the only place that calls `fetch`; handles the bearer token.
   - `src/types.ts` — re-exports the server's `<feature>/models.ts` files (type-only), so the API contract is defined once. Add new feature models there.
-  - `src/pages/` — `LoginPage`, `DashboardPage` (`#/`), `HeadToHeadPage` (`#/head-to-head`), `PredictionsPage` (`#/predictions`). `src/components/` — presentational pieces, incl. `NavBar`, `HeadToHeadCard` (used for squad and scouted players) `PlayerScout` (club → player picker at the bottom of Head-to-head) and `ProjectionTable` (predictions per gameweek with an expandable breakdown).
+  - `src/pages/` — `LoginPage`, `DashboardPage` (`#/`), `HeadToHeadPage` (`#/head-to-head`), `PredictionsPage` (`#/predictions`), `NextGameweekPage` (`#/next-gw`). `src/components/` — presentational pieces, incl. `NavBar`, `HeadToHeadCard` (used for squad and scouted players) `PlayerScout` (club → player picker at the bottom of Head-to-head) `ProjectionTable` (predictions per gameweek with an expandable breakdown), `LineupPitch` (suggested XI + bench) and `PriceWatchList`.
   - `src/hooks/` — `useHashRoute` (tiny hash router; add new pages to `ROUTES` and `NavBar`'s `LINKS`), `useApiResource` (load/refresh/error/401 handling for a page).
 
 ## Commands
@@ -50,7 +50,7 @@ Always run `npm run typecheck` and `npm test` after changes.
 - `config.ts` reads env vars at import time, which is why `test/setup.ts` sets `DATABASE_PATH`, `FPL_TEAM_ID` and the admin credentials before any spec loads.
 - After changing the shape of a cached response, existing `response_cache` rows have the old shape until they expire (30 min) — delete `app/server/data/` locally.
 - `FPL_TEAM_ID` must be set (env var or `config.ts`) or `/api/team` returns a 500 explaining so.
-- Migration 3 (spec 003) forgets imported seasons and clears the caches, so the first load after upgrading downloads past seasons again (~5 s). Migration 4 drops `team_cache`; the team now lives in `response_cache` too.
+- Migration 3 (spec 003) forgets imported seasons and clears the caches, so the first load after upgrading downloads past seasons again (~5 s). Migration 4 drops `team_cache`; the team now lives in `response_cache` too. Migration 5 (spec 004) clears `response_cache` because the projections response gained fields.
 - Past-season data comes from github.com/vaastav/Fantasy-Premier-League (`config.history.baseUrl`). It is imported once per season into SQLite; to force a re-import, delete `app/server/data/`.
 - The FPL API is unofficial and undocumented; fields can change between seasons. It may return 503 while gameweeks are being updated.
 - Specs live in [docs/specs/](docs/specs/), one file per major update (`NNN-short-name.md`). Start a big change by copying `docs/specs/_template.md` to the next number. Keep the active spec up to date: move items to "Done" as you complete them. Don't rewrite finished specs. Later specs supersede earlier ones. See [docs/specs/README.md](docs/specs/README.md).

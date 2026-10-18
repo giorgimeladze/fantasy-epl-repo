@@ -2,7 +2,7 @@
 
 - **Written:** 2026-10-17
 - **Source:** review of [Fantasy Football Fix](https://www.fantasyfootballfix.com/) ([premium features](https://www.fantasyfootballfix.com/premium), [rotation tool](https://www.fantasyfootballfix.com/blog-index/go-head-head-our-new-fixture-rotation-tool/)) against this codebase.
-- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)). Phases 2–5 are backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
+- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)); Phases 2 and 5 done ([spec 004](../specs/004-next-gameweek.md)). Phases 3–4 are backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
 
 The goal: recommendations for the **next gameweek**: who to start, bench and captain, and who to transfer in and out. Only free data (the FPL API and the vaastav history we already import).
 
@@ -42,13 +42,13 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
 - [x] **Check the model:** `npm run backtest`. It beats the season-average baseline. FPL's historical xP is still more accurate, partly because it knows team news (results table in spec 003).
 - [x] **Cache:** `GET /api/projections` in `response_cache` for 30 minutes.
 
-### Phase 2: Lineup for the next gameweek
+### Phase 2: Lineup for the next gameweek: done, see [spec 004](../specs/004-next-gameweek.md)
 
-- [ ] **Best XI:** try all 7 legal formations (3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1) and pick the highest predicted total.
-- [ ] **Bench order:** by predicted points × chance of playing. The backup GK stays at 12.
-- [ ] **Captain / vice-captain:** highest predicted points. Show the top 3 with the gap ("Haaland 7.8 vs Salah 7.1").
-- [ ] **Compare with your current picks:** "Start X instead of Y: +1.4 predicted points."
-- [ ] **New "Next GW" page** (`#/next-gw`, added to `ROUTES` and `NavBar`), with a reason line under each suggestion.
+- [x] **Best XI:** all 7 formations, searched exhaustively (~530 XIs × 6 bench orders). *Better than planned: it also counts automatic substitutions and the vice-captain covering, so a doubtful player is valued with his cover.*
+- [x] **Bench order:** backup GK first, then the outfield order that gets the most from autosubs.
+- [x] **Captain / vice-captain:** the pair adding the most points; top 3 options shown with their play chance.
+- [x] **Compare with your current picks:** "Start X instead of Y: +n", captain change and bench order. *Against the current GW's picks: FPL hides next GW's picks until the deadline.*
+- [x] **New "Next GW" page** (`#/next-gw`) with a reason line for every player.
 
 ### Phase 3: Transfer suggestions
 
@@ -70,16 +70,16 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
   - Wildcard: when the gap between your squad and the best possible squad is largest.
 - [ ] **Rotation planner:** try every pair of GKs or defences (20×19 club pairs) and pick the one whose fixtures cover each other best.
 
-### Phase 5: Easy extras from the same FPL data
+### Phase 5: Easy extras from the same FPL data: done, see [spec 004](../specs/004-next-gameweek.md)
 
-- [ ] **Price-change hint:** `transfers_in_event`, `transfers_out_event`, `cost_change_event`. A rough likely rise/fall flag, clearly labelled as an estimate.
-- [ ] **Differentials:** low `selected_by_percent` + high predicted points.
+- [x] **Price-change hint:** *changed:* FPL now publishes its own price-change outlook (`price_change_projections`, `price_change_percent`), so the hint uses that instead of guessing from transfers. Net transfers are still shown.
+- [x] **Differentials:** outside the squad, under 10% owned, top 5 per position by predicted points over 5 GWs.
 
 ## 4. Do better than FFFix for this app's single manager
 
 - [ ] **Your mini-league instead of the top 10k:** `/leagues-classic/{id}/standings/` and rivals' `/entry/{id}/event/{gw}/picks/` are public. Show **effective ownership in your league**, who rivals captain, and which differentials gain on the leader. More useful than elite data for winning a mini-league, and only ~10–20 requests.
 - [ ] **Your own record:** we already have past picks and "points for me". Add "your captain vs the best option each GW" and "transfers that paid off", to tune how much risk you take.
-- [ ] **Head-to-head as a model input:** FFFix doesn't use player-vs-opponent history. Use it with a small weight and show it as a reason ("good record vs WOL").
+- [x] **Head-to-head as a model input:** FFFix doesn't use player-vs-opponent history. Use it with a small weight and show it as a reason ("good record vs WOL"). *Done (003/004); the backtest shows it adds almost nothing.*
 - [ ] **Explained, not a black box:** every number shows its breakdown (minutes × xG × fixture factor). With one team to manage, being able to check the reasoning matters more than an "AI" score.
 - [ ] **Light on the FPL API:** cache projections per GW and reuse the history already in SQLite. Never call FPL from the browser.
 

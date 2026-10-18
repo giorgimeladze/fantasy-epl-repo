@@ -131,6 +131,7 @@ export interface FixtureEstimate {
   breakdown: PointsBreakdown;
   expectedMinutes: number;
   startChance: number;
+  playChance: number; // starts or comes on
   cleanSheetChance: number;
   expectedGoals: number;
   expectedAssists: number;
@@ -278,6 +279,7 @@ export function projectFixture(
     breakdown,
     expectedMinutes,
     startChance,
+    playChance: startChance + subChance,
     cleanSheetChance,
     expectedGoals,
     expectedAssists,

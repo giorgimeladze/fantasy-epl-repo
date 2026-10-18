@@ -36,6 +36,7 @@ export function apiClient(token?: string) {
     scoutOptions: () => get('/head-to-head/options'),
     scoutPlayer: (id: number | string, { refresh = false } = {}) => get(`/head-to-head/players/${id}`, refresh),
     projections: ({ refresh = false } = {}) => get('/projections', refresh),
+    nextGameweek: ({ refresh = false } = {}) => get('/next-gameweek', refresh),
   };
 }
 

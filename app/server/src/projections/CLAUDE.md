@@ -1,6 +1,6 @@
 # projections/
 
-`/api/projections`: predicted points for the next `config.projections.gameweeks` gameweeks — the squad plus the top players per position.
+`/api/projections`: predicted points for the next `config.projections.gameweeks` gameweeks — the squad, the top players per position and differentials (outside the squad, owned by < `config.projections.differentialMaxOwnership` %). Each fixture and gameweek also has a `playChance`, which `nextGameweek/` uses for captaincy and automatic substitutions.
 
 - `projectionModel.ts` — pure model: FPL scoring rules, club attack/defence strength, expected minutes from starts and availability, and a small head-to-head nudge (±15 %). Every prediction comes with a breakdown that adds up to its points.
 - `projectionService.ts` — gathers inputs from FPL and `history/` and runs the model per fixture (doubles add up, blanks are 0).

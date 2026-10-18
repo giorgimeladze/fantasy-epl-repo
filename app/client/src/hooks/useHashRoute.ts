@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 
-export type Route = 'team' | 'head-to-head' | 'predictions';
+export type Route = 'team' | 'next-gameweek' | 'predictions' | 'head-to-head';
 
 export const ROUTES: Record<Route, string> = {
   team: '#/',
+  'next-gameweek': '#/next-gw',
   'head-to-head': '#/head-to-head',
   predictions: '#/predictions',
 };

@@ -3,6 +3,7 @@ import type {
   LoginResponse,
   MyTeamResponse,
   PlayerHeadToHeadResponse,
+  NextGameweekResponse,
   ProjectionsResponse,
   ScoutOptionsResponse,
 } from './types.ts';
@@ -76,6 +77,10 @@ export const api = {
 
   getHeadToHead(forceRefresh = false): Promise<HeadToHeadResponse> {
     return request<HeadToHeadResponse>(forceRefresh ? '/head-to-head?refresh=true' : '/head-to-head');
+  },
+
+  getNextGameweek(forceRefresh = false): Promise<NextGameweekResponse> {
+    return request<NextGameweekResponse>(forceRefresh ? '/next-gameweek?refresh=true' : '/next-gameweek');
   },
 
   getProjections(forceRefresh = false): Promise<ProjectionsResponse> {

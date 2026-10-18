@@ -2,9 +2,10 @@
 
 A personal Fantasy Premier League dashboard. Sign in, then see your current 15-man squad: starting XI on a pitch, bench, form, upcoming fixtures with difficulty ratings, and how many points each player has earned **for you** this season.
 
-Three pages, linked from the navigation bar at the top:
+Four pages, linked from the navigation bar at the top:
 
 - **My team**: the pitch, the bench and a sortable stats table (including FPL's own xP forecast for the next gameweek).
+- **Next GW**: the best starting XI for the next gameweek, picked from every legal formation, with the bench order, captain and vice-captain. It compares this with your current lineup ("Start Hall instead of Mitchell +0.2") and gives a reason for each player. It also has a **price watch** (FPL's own estimate of which prices rise or fall at the next nightly updates, for your squad and the whole league) and **differentials** (players owned by under 10% of managers with the most predicted points).
 - **Head-to-head**: for each player, their last 4 appearances against their next opponent. It shows goals, assists, minutes, clean sheets, bonus, xG/xA, points, what earned or cost them points (cards, goals conceded, blanks), and an overall verdict. At the bottom, **Scout any player** lets you pick any club and then any of its players to get the same analysis (★ marks players already in your squad).
 
 - **Predictions**: predicted points for each squad player for the next 5 gameweeks: double gameweeks add up both fixtures, blanks show as Blank. Click a player to see where the points come from (minutes, goals, assists, clean sheet, bonus, …). Below that are the top 10 predicted players per position across the league. `npm run backtest` shows how accurate the model was last season.
@@ -105,7 +106,8 @@ All tests are end to end: they call the HTTP API through the typed client in `te
 | `test/auth.test.ts` | Login, validation, unconfigured credentials, session expiry, logout |
 | `test/team.test.ts` | `/api/team`: building the team from mocked FPL data, "points for me" (captaincy, autosubs, transfers), the 30-minute SQLite cache, error mapping |
 | `test/headToHead.test.ts` | `/api/head-to-head`: last 4 matches vs the next opponent across seasons, insights, summaries, caching, importing past seasons once; the scout picker and single-player endpoints |
-| `test/projections.test.ts` | `/api/projections`: predictions per gameweek, double and blank gameweeks, breakdowns, injuries, head-to-head factor, top players, caching |
+| `test/projections.test.ts` | `/api/projections`: predictions per gameweek, double and blank gameweeks, breakdowns, injuries, head-to-head factor, play chance, top players, differentials, caching |
+| `test/nextGameweek.test.ts` | `/api/next-gameweek`: legal XI and bench, best formation, captain and vice-captain, automatic substitutions, swaps vs the current lineup, reasons, blank and double gameweeks, price watch, caching |
 
 The mock data describes a 2-gameweek season for team `123456` (GW3–5 still to play; Arsenal have a double and Man City a blank in GW5). GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. To add a scenario, drop a JSON file in `test/mocks/fpl/` and map it with `mockFplApi({ '/path/': 'file.json' })`. You can also pass an inline response, e.g. `{ status: 503 }`.
 
@@ -133,6 +135,7 @@ The history mocks cover 2023-24 to 2025-26; 2022-23 is deliberately missing to t
 | GET | `/api/team` | Bearer | Manager summary, current gameweek, 15 players with stats and fixtures, and `cache` info. `?refresh=true` skips the cache. |
 | GET | `/api/head-to-head/options` | Bearer | All clubs with their players (for the scout picker) |
 | GET | `/api/head-to-head/players/:id` | Bearer | One player's last 4 matches against their next opponent, cached per player for 30 minutes |
+| GET | `/api/next-gameweek` | Bearer | Best XI, bench order and captain for the next gameweek compared with the current lineup, all formations, price watch and differentials, with `cache` info. `?refresh=true` skips the cache. |
 | GET | `/api/projections` | Bearer | Predicted points for the next 5 gameweeks: the squad and the top 10 per position, with a breakdown per fixture and `cache` info. `?refresh=true` skips the cache. |
 | GET | `/api/head-to-head` | Bearer | Each player's last 4 matches against their next opponent, with insights, a summary and `cache` info. `?refresh=true` skips the cache. |
 

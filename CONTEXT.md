@@ -72,12 +72,24 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **FPL's `ep_next`** is shown alongside, but is just the player's form for most players.
 - **Backtest:** `npm run backtest [-- <season>]` replays a past season from `player_fixture_history`. That table also stores each match's position, starts and FPL's `xP` (from vaastav `merged_gw.csv`; its xP has gaps, e.g. 0 from GW7 of 2025-26).
 
+## Next gameweek: best XI and captain
+
+`nextGameweek/lineupOptimizer.ts` picks the lineup from the next gameweek's predicted points and play chances (`/api/next-gameweek`, the Next GW page). Details in [spec 004](docs/specs/004-next-gameweek.md).
+
+- **Search:** every legal XI from the 15 (1 GK; 3–5 DEF, 2–5 MID, 1–3 FWD; ~530 XIs) × every order of the 3 outfield bench players.
+- **Score of a lineup** = starters' predicted points + armband + expected automatic substitutions.
+  - **Armband:** the captain's points again, plus (chance the captain doesn't play) × the vice-captain's points. With a captain who is certain to play, the vice is the best other starter.
+  - **Autosubs:** the backup GK covers the starting GK; outfield bench players fill outfield no-shows in bench order (Poisson binomial over the starters' play chances; formation limits on subs are ignored).
+- **Comparison:** against the *current* gameweek's picks, because FPL only shows next gameweek's picks after the deadline. Swaps are paired like for like first, then the formation change.
+- **Price watch:** FPL's own (undocumented) `price_change_projections` on `bootstrap-static`: a likelihood from −5 to 5 for each of the next price updates (offset 0 = tonight), plus `price_change_percent` (progress to the change) and `price_change_locked_until`. |likelihood| ≥ 3 is "likely", 2 "possible"; locked prices are skipped.
+- **Differentials:** players outside the squad owned by under 10% (`selected_by_percent`), top 5 per position by predicted points over the next 5 gameweeks (computed in `projections/`).
+
 ## Caching
 
 Three layers on the server:
 
 1. **Past-season history** (`player_fixture_history`): permanent; seasons never change.
-2. **SQLite team and head-to-head caches** (`team_cache` table, `app/server/data/fpl.sqlite`): the fully assembled team for a team ID is stored with its fetch time. Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (the dashboard's Refresh button) bypasses it. Failed fetches are never cached. The head-to-head and predictions pages are cached the same way in `response_cache` (keys `head-to-head:<teamId>` and `projections:<teamId>`).
+2. **SQLite response cache** (`response_cache` table, `app/server/data/fpl.sqlite`): each page's assembled response is stored with its fetch time (keys `team:<teamId>`, `head-to-head:<teamId>`, `head-to-head:player:<id>`, `projections:<teamId>`, `next-gameweek:<teamId>`). Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (each page's Refresh button) bypasses it. Failed fetches are never cached.
 3. **In-memory FPL response cache** (`fplClient`): finished-gameweek picks/live data for 24 h, everything else for 2 minutes. Speeds up a refetch (only the current gameweek is re-downloaded in practice) and is lost on restart.
 
 ## Testing approach

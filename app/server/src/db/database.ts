@@ -63,6 +63,8 @@ const MIGRATIONS: string[] = [
    DELETE FROM response_cache`,
   // The team snapshot moved into response_cache (key "team:<id>").
   `DROP TABLE team_cache`,
+  // Spec 004: projections gained playChance, selectedByPercent and differentials.
+  `DELETE FROM response_cache`,
 ];
 
 function migrate(db: DatabaseSync): void {
