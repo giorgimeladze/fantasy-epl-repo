@@ -40,6 +40,26 @@
     "finished": false
   },
   {
+    "id": 41,
+    "event": 5,
+    "team_h": 1,
+    "team_a": 4,
+    "team_h_difficulty": 3,
+    "team_a_difficulty": 4,
+    "kickoff_time": "2026-09-19T14:00:00Z",
+    "finished": false
+  },
+  {
+    "id": 42,
+    "event": 5,
+    "team_h": 2,
+    "team_a": 1,
+    "team_h_difficulty": 4,
+    "team_a_difficulty": 4,
+    "kickoff_time": "2026-09-21T19:00:00Z",
+    "finished": false
+  },
+  {
     "id": 99,
     "event": null,
     "team_h": 1,

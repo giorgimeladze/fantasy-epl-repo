@@ -79,11 +79,15 @@ describe('historyImporter', () => {
         expectedGoals: 0.8,
         expectedAssists: 0.1,
         defensiveContribution: 3,
+        position: 'MID',
+        starts: 1,
+        expectedPoints: 5.5,
       });
     });
 
-    it('skips rows for players missing from players_raw', () => {
+    it('skips rows for players missing from players_raw and assistant-manager rows', () => {
       assert.equal(records.length, 4);
+      assert.ok(records.every((r) => r.position === 'MID' || r.position === 'GK'));
     });
 
     it('leaves columns a season does not have as null', () => {
@@ -94,7 +98,8 @@ describe('historyImporter', () => {
         historyMock('2024-25/teams.csv'),
       );
       assert.ok(older.length > 0);
-      assert.ok(older.every((r) => r.defensiveContribution === null));
+      assert.ok(older.every((r) => r.defensiveContribution === null && r.starts === null && r.expectedPoints === null));
+      assert.ok(older.every((r) => r.position !== null));
     });
   });
 

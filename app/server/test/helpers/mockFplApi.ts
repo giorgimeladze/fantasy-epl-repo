@@ -19,6 +19,7 @@ const DEFAULT_ROUTES: Record<string, MockRoute> = {
   '/event/1/live/': 'live-gw1.json',
   '/event/2/live/': 'live-gw2.json',
   '/fixtures/?future=1': 'fixtures-future.json',
+  '/fixtures/': 'fixtures.json',
   '/element-summary/9/': 'element-summary-9.json',
 };
 

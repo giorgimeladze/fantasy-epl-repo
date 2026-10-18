@@ -15,6 +15,7 @@ export const config = {
     path: process.env.DATABASE_PATH ?? path.join(serverRoot, 'data', 'fpl.sqlite'),
     teamCacheTtlMs: 30 * MINUTE,
     headToHeadCacheTtlMs: 30 * MINUTE,
+    projectionsCacheTtlMs: 30 * MINUTE,
   },
 
   history: {
@@ -22,6 +23,11 @@ export const config = {
     baseUrl: 'https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data',
     pastSeasons: 4,
     matchesPerPlayer: 4,
+  },
+
+  projections: {
+    gameweeks: 5, // how many upcoming gameweeks to predict
+    topPerPosition: 10,
   },
 
   auth: {

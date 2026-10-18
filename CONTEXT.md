@@ -27,6 +27,8 @@ Base URL: `https://fantasy.premierleague.com/api`
 | `/entry/{teamId}/event/{gw}/picks/` | The 15 picks for a GW, multipliers, captaincy, chip, autosubs, bank/value |
 | `/event/{gw}/live/` | Points each player scored in a GW |
 | `/fixtures/?future=1` | Upcoming fixtures with FDR |
+| `/fixtures/` | Every fixture of the season; finished ones give each club's matches played (predictions) |
+| `/element-summary/{id}/` | One player's matches this season (head-to-head) |
 
 The team ID is visible in the URL of the "Points" page on the FPL site: `fantasy.premierleague.com/entry/<TEAM_ID>/event/<GW>`.
 
@@ -47,12 +49,35 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **Scout any player:** the same analysis is available for any Premier League player (`/api/head-to-head/players/:id`). Their next fixture comes from the upcoming-fixtures list and doesn't depend on your team. Results are cached per player (key `head-to-head:player:<id>`).
 - **Verdict** is based on average points per meeting: ≥ 6 is good, < 3 is poor, anything else is average, and no meetings means none.
 
+## Predicted points
+
+`projectionModel.ts` predicts each player's FPL points per fixture for the next 5 gameweeks (`/api/projections`, the Predictions page). It is pure and shared by the live service and the backtest. Details and measured accuracy are in [spec 003](docs/specs/003-predicted-points.md).
+
+- **Inputs:**
+  - The player's season totals from `bootstrap-static` (minutes, starts, xG, xA, bonus, saves, cards, defensive contributions).
+  - Last season's totals from SQLite, matched by `code`, to steady small samples.
+  - FPL's availability flags.
+  - Club strength.
+- **Club strength:** attack = club xG per match (sum of its players' `expected_goals`), defence = xG conceded per match (its goalkeepers' `expected_goals_conceded`). Both are relative to the league average. FPL's own `strength_attack/defence_*` fields are 0 in 2026-27.
+- **Per fixture:**
+  - Start chance and expected minutes.
+  - Goals and assists scaled by the opponent's defence and home advantage.
+  - Clean-sheet chance `e^(−opponent's expected goals)`.
+  - Expected "−1 per 2 conceded" and "+1 per 3 saves".
+  - The chance of reaching the defensive-contribution threshold.
+  - Bonus and cards.
+  - All scored with the 2025-26 points for the player's position.
+- **Gameweeks:** a double gameweek sums its fixtures; a blank gameweek is 0.
+- **Head-to-head factor:** at most ±15 % on goals, assists and bonus. The backtest shows it barely matters.
+- **FPL's `ep_next`** is shown alongside, but is just the player's form for most players.
+- **Backtest:** `npm run backtest [-- <season>]` replays a past season from `player_fixture_history`. That table also stores each match's position, starts and FPL's `xP` (from vaastav `merged_gw.csv`; its xP has gaps, e.g. 0 from GW7 of 2025-26).
+
 ## Caching
 
 Three layers on the server:
 
 1. **Past-season history** (`player_fixture_history`): permanent; seasons never change.
-2. **SQLite team and head-to-head caches** (`team_cache` table, `app/server/data/fpl.sqlite`): the fully assembled team for a team ID is stored with its fetch time. Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (the dashboard's Refresh button) bypasses it. Failed fetches are never cached. The head-to-head page is cached the same way in `response_cache` (key `head-to-head:<teamId>`).
+2. **SQLite team and head-to-head caches** (`team_cache` table, `app/server/data/fpl.sqlite`): the fully assembled team for a team ID is stored with its fetch time. Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (the dashboard's Refresh button) bypasses it. Failed fetches are never cached. The head-to-head and predictions pages are cached the same way in `response_cache` (keys `head-to-head:<teamId>` and `projections:<teamId>`).
 3. **In-memory FPL response cache** (`fplClient`): finished-gameweek picks/live data for 24 h, everything else for 2 minutes. Speeds up a refetch (only the current gameweek is re-downloaded in practice) and is lost on restart.
 
 ## Testing approach

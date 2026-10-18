@@ -2,7 +2,7 @@
 
 - **Written:** 2026-10-17
 - **Source:** review of [Fantasy Football Fix](https://www.fantasyfootballfix.com/) ([premium features](https://www.fantasyfootballfix.com/premium), [rotation tool](https://www.fantasyfootballfix.com/blog-index/go-head-head-our-new-fixture-rotation-tool/)) against this codebase.
-- **Status:** Backlog. Not a spec yet. When work starts, turn a phase into a numbered spec in [../specs/](../specs/) and link it here.
+- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)). Phases 2–5 are backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
 
 The goal: recommendations for the **next gameweek**: who to start, bench and captain, and who to transfer in and out. Only free data (the FPL API and the vaastav history we already import).
 
@@ -27,21 +27,20 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
 
 ## 3. What to implement, in order
 
-### Phase 1: Predicted points (everything else depends on it)
+### Phase 1: Predicted points (everything else depends on it): done, see [spec 003](../specs/003-predicted-points.md)
 
-- [ ] **Quick win:** type `ep_this` / `ep_next` (FPL's own forecast in `bootstrap-static` `elements`) in `models/fpl.ts` and show predicted points for next GW on the dashboard.
-- [ ] **Our own model:** a new pure `projectionService` with tests, like `pointsCalculator`. Per player, per GW for the next 1–5 GWs:
-  - [ ] **Chance of playing:** from `chance_of_playing_next_round`, `status` and recent minutes.
-  - [ ] **Expected minutes:** from recent appearances (are they a regular starter or rotated?).
-  - [ ] **Goals:** xG per 90 × points per goal for the position × an opponent defence factor.
-  - [ ] **Assists:** xA per 90 × 3 × the same opponent factor.
-  - [ ] **Clean sheets (GK/DEF/MID):** chance from the club's expected goals conceded, adjusted for the opponent's attack.
-  - [ ] **Appearance, bonus and defensive contributions:** from the player's own averages.
-  - [ ] **Fixture factor:** use the `teams[]` fields `strength_attack_home/away` and `strength_defence_home/away`, not just the 1–5 FDR.
-  - [ ] **Head-to-head adjustment:** the player's average against this opponent compared with their season average, with a small weight. This turns the existing verdict into a number.
-- [ ] **Double and blank gameweeks:** group fixtures by gameweek instead of taking "next 5 fixtures". A double counts twice and a blank counts as 0. This also fixes the 002 limitation that the second opponent in a double gameweek is ignored.
-- [ ] **Check the model:** run it over last season's stored data (predicted vs actual, mean error per position), and compare it with `ep_next`. Tune with numbers, not by feel.
-- [ ] **Cache:** store projections per GW in `response_cache`; they only change when FPL data changes.
+- [x] **Quick win:** FPL's `ep_next` as an xP column on My team. *Turned out to be FPL form for ~92 % of players, so it's for comparison only.*
+- [x] **Our own model:** pure `projectionModel.ts` + `projectionService.ts`, per player and GW for the next 5 GWs:
+  - [x] **Chance of playing:** from `chance_of_playing_next_round` and `status`, recovering over ~3 GWs.
+  - [x] **Expected minutes:** from the season's start share and minutes per start. *Recent appearances aren't used yet (next step in spec 003).*
+  - [x] **Goals and assists:** xG and xA per 90 × minutes × opponent defence, scored with FPL points for the position.
+  - [x] **Clean sheets and goals conceded:** Poisson from the opponent's expected goals.
+  - [x] **Appearance, bonus, saves, defensive contributions and cards:** from the player's own rates, steadied with last season.
+  - [x] **Fixture factor:** *changed:* the live API's `strength_attack/defence_*` fields are 0 this season, so club attack and defence come from xG for and against.
+  - [x] **Head-to-head adjustment:** small weight. *Finding: it makes no measurable difference in the backtest (MAE ±0.003), so it stays small.*
+- [x] **Double and blank gameweeks:** fixtures grouped by gameweek.
+- [x] **Check the model:** `npm run backtest`. It beats the season-average baseline. FPL's historical xP is still more accurate, partly because it knows team news (results table in spec 003).
+- [x] **Cache:** `GET /api/projections` in `response_cache` for 30 minutes.
 
 ### Phase 2: Lineup for the next gameweek
 

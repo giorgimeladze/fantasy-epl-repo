@@ -31,6 +31,14 @@
       "finished": false,
       "is_current": false,
       "is_next": false
+    },
+    {
+      "id": 5,
+      "name": "Gameweek 5",
+      "deadline_time": "2026-09-19T10:00:00Z",
+      "finished": false,
+      "is_current": false,
+      "is_next": false
     }
   ],
   "teams": [
@@ -102,7 +110,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 6,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 0,
+      "expected_goals_conceded": "1.80",
+      "ep_next": "4.1"
     },
     {
       "id": 2,
@@ -128,7 +143,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 6,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 0,
+      "expected_goals_conceded": "2.40",
+      "ep_next": "3.8"
     },
     {
       "id": 3,
@@ -154,7 +176,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 18,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "4.0"
     },
     {
       "id": 4,
@@ -180,7 +209,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 1,
+      "red_cards": 0,
+      "defensive_contribution": 18,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "4.4"
     },
     {
       "id": 5,
@@ -206,7 +242,14 @@
       "expected_assists": "0.80",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 18,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "3.9"
     },
     {
       "id": 6,
@@ -232,7 +275,14 @@
       "expected_assists": "0.00",
       "status": "d",
       "news": "Knock - 75% chance of playing",
-      "chance_of_playing_next_round": 75
+      "chance_of_playing_next_round": 75,
+      "starts": 1,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 18,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "2.6"
     },
     {
       "id": 7,
@@ -258,7 +308,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 18,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "3.1"
     },
     {
       "id": 8,
@@ -284,7 +341,14 @@
       "expected_assists": "0.80",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 14,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "5.2"
     },
     {
       "id": 9,
@@ -310,7 +374,14 @@
       "expected_assists": "0.80",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 14,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "6.8"
     },
     {
       "id": 10,
@@ -336,7 +407,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 14,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "4.6"
     },
     {
       "id": 11,
@@ -362,7 +440,14 @@
       "expected_assists": "1.60",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 14,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "5.9"
     },
     {
       "id": 12,
@@ -388,7 +473,14 @@
       "expected_assists": "0.80",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 1,
+      "red_cards": 0,
+      "defensive_contribution": 14,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "4.2"
     },
     {
       "id": 13,
@@ -414,7 +506,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 4,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "7.4"
     },
     {
       "id": 14,
@@ -440,7 +539,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 2,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 4,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "4.3"
     },
     {
       "id": 15,
@@ -466,7 +572,14 @@
       "expected_assists": "0.00",
       "status": "i",
       "news": "Hamstring injury - Unknown return date",
-      "chance_of_playing_next_round": 0
+      "chance_of_playing_next_round": 0,
+      "starts": 1,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 4,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "0.0"
     },
     {
       "id": 16,
@@ -492,7 +605,14 @@
       "expected_assists": "0.00",
       "status": "a",
       "news": "",
-      "chance_of_playing_next_round": null
+      "chance_of_playing_next_round": null,
+      "starts": 1,
+      "saves": 0,
+      "yellow_cards": 0,
+      "red_cards": 0,
+      "defensive_contribution": 4,
+      "expected_goals_conceded": "0.00",
+      "ep_next": "3.0"
     }
   ]
 }

@@ -48,6 +48,7 @@ export interface PlayerView {
   // Points
   gameweekPoints: number; // raw points this gameweek (before multiplier)
   pointsForMe: number; // season points contributed to this manager (multipliers applied)
+  fplExpectedPoints: number; // FPL's own forecast for the next gameweek (ep_next; 0 if none)
 
   // Availability
   status: string;

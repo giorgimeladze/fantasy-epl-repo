@@ -52,6 +52,7 @@ function toPlayerView(
 
     gameweekPoints: extras.gameweekPoints,
     pointsForMe: extras.pointsForMe,
+    fplExpectedPoints: num(element.ep_next ?? ''),
 
     status: element.status,
     news: element.news,

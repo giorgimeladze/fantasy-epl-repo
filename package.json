@@ -15,7 +15,8 @@
     "build": "npm run build -w app/server && npm run build -w app/client",
     "start": "npm run start -w app/server",
     "typecheck": "npm run typecheck -w app/server && npm run typecheck -w app/client",
-    "test": "npm run test -w app/server"
+    "test": "npm run test -w app/server",
+    "backtest": "npm run backtest -w app/server --"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

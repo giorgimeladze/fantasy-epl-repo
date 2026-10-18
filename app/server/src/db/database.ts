@@ -53,6 +53,14 @@ const MIGRATIONS: string[] = [
    );
    CREATE INDEX idx_history_player_opponent
      ON player_fixture_history (player_code, opponent_code, kickoff_time)`,
+  // Predicted points (spec 003): position, starts and FPL's forecast per past match. Forgetting the
+  // imported seasons makes them download again with the new columns; cached responses have an old shape.
+  `ALTER TABLE player_fixture_history ADD COLUMN position TEXT;
+   ALTER TABLE player_fixture_history ADD COLUMN starts INTEGER;
+   ALTER TABLE player_fixture_history ADD COLUMN expected_points REAL;
+   DELETE FROM history_import;
+   DELETE FROM team_cache;
+   DELETE FROM response_cache`,
 ];
 
 function migrate(db: DatabaseSync): void {

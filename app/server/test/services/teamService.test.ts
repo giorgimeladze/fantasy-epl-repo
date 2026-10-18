@@ -63,6 +63,7 @@ describe('teamService.getMyTeam', () => {
       assert.equal(salah.form, 8.5);
       assert.equal(salah.totalPoints, 17);
       assert.equal(salah.gameweekPoints, 5);
+      assert.equal(salah.fplExpectedPoints, 6.8); // FPL's ep_next
 
       assert.equal(havertz.position, 'FWD');
       assert.equal(havertz.status, 'i');
@@ -103,6 +104,8 @@ describe('teamService.getMyTeam', () => {
         [
           { gameweek: 3, opponent: 'LIV', isHome: true, difficulty: 4 },
           { gameweek: 4, opponent: 'CHE', isHome: false, difficulty: 3 },
+          { gameweek: 5, opponent: 'CHE', isHome: true, difficulty: 3 }, // double gameweek
+          { gameweek: 5, opponent: 'LIV', isHome: false, difficulty: 4 },
         ],
       );
       assert.deepEqual(

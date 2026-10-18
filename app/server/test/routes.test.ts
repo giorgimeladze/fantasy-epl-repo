@@ -120,6 +120,28 @@ describe('HTTP routes', () => {
     });
   });
 
+  describe('GET /api/projections', () => {
+    it('requires authentication', async () => {
+      assert.equal((await request(app).get('/api/projections')).status, 401);
+    });
+
+    it('returns squad predictions and the top players per position, then serves them from the cache', async () => {
+      const token = await login();
+
+      const res = await request(app).get('/api/projections').set('Authorization', `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      assert.deepEqual(res.body.gameweeks, [3, 4, 5]);
+      assert.equal(res.body.squad.length, 15);
+      assert.deepEqual(Object.keys(res.body.top), ['GK', 'DEF', 'MID', 'FWD']);
+      assert.equal(res.body.cache.fromCache, false);
+
+      const again = await request(app).get('/api/projections').set('Authorization', `Bearer ${token}`);
+      assert.equal(again.body.cache.fromCache, true);
+      const refreshed = await request(app).get('/api/projections?refresh=true').set('Authorization', `Bearer ${token}`);
+      assert.equal(refreshed.body.cache.fromCache, false);
+    });
+  });
+
   describe('scout endpoints', () => {
     it('require authentication', async () => {
       assert.equal((await request(app).get('/api/head-to-head/options')).status, 401);

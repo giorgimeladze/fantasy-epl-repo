@@ -644,3 +644,57 @@ table.players {
   background: var(--green);
   color: var(--purple);
 }
+
+/* Predictions */
+.projections tr.clickable {
+  cursor: pointer;
+}
+
+.projections tr.clickable:hover td {
+  background: #faf8fc;
+}
+
+.xp-cell {
+  min-width: 4.5rem;
+}
+
+.xp-fixtures {
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+.xp-fixtures .fixture {
+  font-size: 0.7rem;
+  padding: 0.05rem 0.3rem;
+}
+
+.xp-high strong { color: #0b6b3a; }
+.xp-good strong { color: #13a05a; }
+.xp-low strong { color: var(--muted); }
+
+.xp-blank {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.breakdown-row > td {
+  background: #faf8fc;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+table.breakdown {
+  min-width: 0;
+  background: var(--surface);
+  font-size: 0.85rem;
+}
+
+.breakdown .breakdown-total td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+}
+
+.breakdown .breakdown-inputs td {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

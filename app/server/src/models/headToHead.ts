@@ -31,7 +31,14 @@ export interface FixtureRecord {
   expectedGoals: number | null;
   expectedAssists: number | null;
   defensiveContribution: number | null; // tracked from 2025-26 onwards
+  // Past seasons only (the vaastav dataset); null for this season's FPL data.
+  position: Position | null; // the player's position that season
+  starts: number | null;
+  expectedPoints: number | null; // FPL's own forecast for the match ("xP")
 }
+
+/** Fields of FixtureRecord used by the model and backtest, not sent to the head-to-head page. */
+export type InternalFixtureFields = 'playerCode' | 'opponentCode' | 'position' | 'starts' | 'expectedPoints';
 
 export type InsightTone = 'good' | 'bad';
 
@@ -40,7 +47,7 @@ export interface Insight {
   tone: InsightTone;
 }
 
-export interface HeadToHeadMatch extends Omit<FixtureRecord, 'playerCode' | 'opponentCode'> {
+export interface HeadToHeadMatch extends Omit<FixtureRecord, InternalFixtureFields> {
   result: 'W' | 'D' | 'L' | null; // from the player's side
   insights: Insight[];
 }

@@ -69,6 +69,11 @@ export const fplClient = {
     return getCached('/fixtures/?future=1', config.fpl.liveCacheTtlMs);
   },
 
+  /** Every fixture of the season, finished or not. */
+  getFixtures(): Promise<FplFixture[]> {
+    return getCached('/fixtures/', config.fpl.liveCacheTtlMs);
+  },
+
   clearCache(): void {
     cache.clear();
   },

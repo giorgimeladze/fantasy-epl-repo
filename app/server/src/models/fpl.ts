@@ -43,6 +43,13 @@ export interface FplElement {
   selected_by_percent: string;
   expected_goals: string;
   expected_assists: string;
+  expected_goals_conceded: string;
+  starts: number;
+  saves: number;
+  yellow_cards: number;
+  red_cards: number;
+  defensive_contribution: number;
+  ep_next: string | null; // FPL's own forecast for the next gameweek
   status: string; // "a" available, "d" doubtful, "i" injured, "s" suspended, "u" unavailable, "n" not in squad
   news: string;
   chance_of_playing_next_round: number | null;

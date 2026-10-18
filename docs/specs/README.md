@@ -8,6 +8,7 @@ Each major update to the codebase gets its own spec: what needs to be done, what
 | --- | --- | --- |
 | 001 | [Initial dashboard](001-initial-dashboard.md) | Done |
 | 002 | [Head-to-head page](002-head-to-head.md) | Done |
+| 003 | [Predicted points](003-predicted-points.md) | Done |
 
 ## Conventions
 

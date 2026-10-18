@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 
-export type Route = 'team' | 'head-to-head';
+export type Route = 'team' | 'head-to-head' | 'predictions';
 
 export const ROUTES: Record<Route, string> = {
   team: '#/',
   'head-to-head': '#/head-to-head',
+  predictions: '#/predictions',
 };
 
 function currentRoute(): Route {
-  return window.location.hash === ROUTES['head-to-head'] ? 'head-to-head' : 'team';
+  const match = (Object.keys(ROUTES) as Route[]).find((route) => ROUTES[route] === window.location.hash);
+  return match ?? 'team';
 }
 
 /** Minimal hash-based routing: bookmarkable pages without a router dependency. */

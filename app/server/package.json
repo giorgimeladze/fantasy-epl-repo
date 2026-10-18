@@ -9,7 +9,8 @@
     "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=../../.env dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
     "test": "mocha",
-    "test:watch": "mocha --watch --watch-files src,test"
+    "test:watch": "mocha --watch --watch-files src,test",
+    "backtest": "tsx --disable-warning=ExperimentalWarning --env-file-if-exists=../../.env src/scripts/backtest.ts"
   },
   "dependencies": {
     "express": "^5.2.1"

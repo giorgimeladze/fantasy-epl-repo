@@ -1,6 +1,5 @@
 import { config } from '../config.js';
 import { fixtureHistoryRepository } from '../db/fixtureHistoryRepository.js';
-import { responseCacheRepository } from '../db/responseCacheRepository.js';
 import type { FplBootstrap, FplElement, FplElementHistory, FplTeam } from '../models/fpl.js';
 import type {
   FixtureRecord,
@@ -9,9 +8,10 @@ import type {
   PlayerHeadToHeadResponse,
   ScoutOptionsResponse,
 } from '../models/headToHead.js';
-import type { CacheInfo, Position, UpcomingFixture } from '../models/team.js';
+import type { Position, UpcomingFixture } from '../models/team.js';
 import { HttpError } from '../utils/httpError.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
+import { cachedResponse } from './cachedResponse.js';
 import { fplClient } from './fplClient.js';
 import { positionOf, upcomingFixturesByTeam } from './fplMappers.js';
 import { summarize, toMatch } from './headToHeadInsights.js';
@@ -62,6 +62,9 @@ function fromElementHistory(
     expectedGoals: num(h.expected_goals),
     expectedAssists: num(h.expected_assists),
     defensiveContribution: h.defensive_contribution ?? null,
+    position: null,
+    starts: null,
+    expectedPoints: null,
   };
 }
 
@@ -166,25 +169,6 @@ async function buildPlayerSnapshot(playerId: number): Promise<PlayerSnapshot> {
   return { ...result, seasonsCovered: ctx.seasonsCovered };
 }
 
-/** Serves `key` from the SQLite response cache for `ttl`, otherwise builds and stores it. */
-async function cached<T extends object>(
-  key: string,
-  ttl: number,
-  forceRefresh: boolean,
-  build: () => Promise<T>,
-): Promise<T & { cache: CacheInfo }> {
-  const cache = responseCacheRepository();
-  const hit = forceRefresh ? null : cache.get<T>(key);
-  if (hit && Date.now() - hit.fetchedAt < ttl) {
-    return { ...hit.payload, cache: cacheInfo(true, hit.fetchedAt, ttl) };
-  }
-
-  const payload = await build();
-  const fetchedAt = Date.now();
-  cache.save(key, payload, fetchedAt);
-  return { ...payload, cache: cacheInfo(false, fetchedAt, ttl) };
-}
-
 export const headToHeadService = {
   /**
    * For every squad player: their last N appearances against their next opponent,
@@ -195,7 +179,7 @@ export const headToHeadService = {
     teamId: number = config.fpl.teamId,
     { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<HeadToHeadResponse> {
-    return cached(`head-to-head:${teamId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
+    return cachedResponse(`head-to-head:${teamId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
       buildSquadSnapshot(teamId, forceRefresh),
     );
   },
@@ -205,7 +189,7 @@ export const headToHeadService = {
     playerId: number,
     { forceRefresh = false }: { forceRefresh?: boolean } = {},
   ): Promise<PlayerHeadToHeadResponse> {
-    return cached(`head-to-head:player:${playerId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
+    return cachedResponse(`head-to-head:player:${playerId}`, config.db.headToHeadCacheTtlMs, forceRefresh, () =>
       buildPlayerSnapshot(playerId),
     );
   },
@@ -235,11 +219,3 @@ export const headToHeadService = {
     return { clubs };
   },
 };
-
-function cacheInfo(fromCache: boolean, fetchedAt: number, ttl: number): CacheInfo {
-  return {
-    fromCache,
-    fetchedAt: new Date(fetchedAt).toISOString(),
-    expiresAt: new Date(fetchedAt + ttl).toISOString(),
-  };
-}

@@ -56,7 +56,14 @@ export function matchInsights(record: FixtureRecord, position: Position): Insigh
 }
 
 export function toMatch(record: FixtureRecord, position: Position): HeadToHeadMatch {
-  const { playerCode: _playerCode, opponentCode: _opponentCode, ...rest } = record;
+  const {
+    playerCode: _playerCode,
+    opponentCode: _opponentCode,
+    position: _position,
+    starts: _starts,
+    expectedPoints: _expectedPoints,
+    ...rest
+  } = record;
   return { ...rest, result: matchResult(record), insights: matchInsights(record, position) };
 }
 

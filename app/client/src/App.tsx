@@ -5,6 +5,7 @@ import { useHashRoute } from './hooks/useHashRoute.ts';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { HeadToHeadPage } from './pages/HeadToHeadPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
+import { PredictionsPage } from './pages/PredictionsPage.tsx';
 
 export function App() {
   const [token, setToken] = useState<string | null>(() => tokenStore.get());
@@ -33,6 +34,8 @@ export function App() {
       <main className="content">
         {route === 'head-to-head' ? (
           <HeadToHeadPage key="head-to-head" onUnauthorized={handleSessionEnd} />
+        ) : route === 'predictions' ? (
+          <PredictionsPage key="predictions" onUnauthorized={handleSessionEnd} />
         ) : (
           <DashboardPage key="team" onUnauthorized={handleSessionEnd} />
         )}

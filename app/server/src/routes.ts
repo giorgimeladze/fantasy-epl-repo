@@ -3,6 +3,7 @@ import type { LoginRequest } from './models/auth.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import { authService } from './services/authService.js';
 import { headToHeadService } from './services/headToHeadService.js';
+import { projectionService } from './services/projectionService.js';
 import { teamService } from './services/teamService.js';
 
 export const router = Router();
@@ -59,6 +60,12 @@ router.get('/head-to-head/players/:id', requireAuth, async (req, res) => {
   }
   const forceRefresh = req.query.refresh === 'true';
   res.json(await headToHeadService.getPlayerHeadToHead(playerId, { forceRefresh }));
+});
+
+// Predicted points for the next gameweeks (squad + top players per position). Same cache and ?refresh=true.
+router.get('/projections', requireAuth, async (req, res) => {
+  const forceRefresh = req.query.refresh === 'true';
+  res.json(await projectionService.getProjections(undefined, { forceRefresh }));
 });
 
 // Unknown /api routes get JSON, not the SPA fallback.

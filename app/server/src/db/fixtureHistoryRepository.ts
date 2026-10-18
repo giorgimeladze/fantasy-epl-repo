@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { FixtureRecord } from '../models/headToHead.js';
+import type { Position } from '../models/team.js';
 import { getDatabase } from './database.js';
 
 interface FixtureRow {
@@ -31,6 +32,37 @@ interface FixtureRow {
   expected_goals: number | null;
   expected_assists: number | null;
   defensive_contribution: number | null;
+  position: string | null;
+  starts: number | null;
+  expected_points: number | null;
+}
+
+/** One player's totals over a season (matches with minutes > 0). */
+export interface PlayerSeasonTotals {
+  appearances: number;
+  minutes: number;
+  starts: number;
+  expectedGoals: number;
+  expectedAssists: number;
+  bonus: number;
+  saves: number;
+  yellowCards: number;
+  redCards: number;
+  defensiveContribution: number | null; // null before 2025-26
+  totalPoints: number;
+}
+
+/** A player's average points against one club over their most recent meetings. */
+export interface OpponentRecord {
+  meetings: number;
+  averagePoints: number;
+}
+
+export interface HeadToHeadAverages {
+  /** Key `${playerCode}:${opponentCode}`. */
+  byOpponent: Map<string, OpponentRecord>;
+  /** Average points per appearance over the same seasons, by player code. */
+  overall: Map<number, number>;
 }
 
 const COLUMNS = [
@@ -39,6 +71,7 @@ const COLUMNS = [
   'minutes', 'goals_scored', 'assists', 'clean_sheets', 'goals_conceded', 'own_goals',
   'penalties_saved', 'penalties_missed', 'yellow_cards', 'red_cards', 'saves', 'bonus',
   'bps', 'total_points', 'expected_goals', 'expected_assists', 'defensive_contribution',
+  'position', 'starts', 'expected_points',
 ] as const;
 
 function toValues(r: FixtureRecord): (string | number | null)[] {
@@ -48,6 +81,7 @@ function toValues(r: FixtureRecord): (string | number | null)[] {
     r.minutes, r.goals, r.assists, r.cleanSheets, r.goalsConceded, r.ownGoals,
     r.penaltiesSaved, r.penaltiesMissed, r.yellowCards, r.redCards, r.saves, r.bonus,
     r.bps, r.totalPoints, r.expectedGoals, r.expectedAssists, r.defensiveContribution,
+    r.position, r.starts, r.expectedPoints,
   ];
 }
 
@@ -81,6 +115,9 @@ function fromRow(row: FixtureRow): FixtureRecord {
     expectedGoals: row.expected_goals,
     expectedAssists: row.expected_assists,
     defensiveContribution: row.defensive_contribution,
+    position: row.position as Position | null,
+    starts: row.starts,
+    expectedPoints: row.expected_points,
   };
 }
 
@@ -123,6 +160,88 @@ export function createFixtureHistoryRepository(db: DatabaseSync) {
         )
         .all(playerCode, opponentCode, limit) as unknown as FixtureRow[];
       return rows.map(fromRow);
+    },
+
+    /** Every row of one season, in kickoff order (used by the backtest). */
+    seasonRecords(season: string): FixtureRecord[] {
+      const rows = db
+        .prepare('SELECT * FROM player_fixture_history WHERE season = ? ORDER BY kickoff_time, fixture_id, player_code')
+        .all(season) as unknown as FixtureRow[];
+      return rows.map(fromRow);
+    },
+
+    /** Per-player totals for one season, by player code. Starts default to 60+ minute matches if missing. */
+    playerSeasonTotals(season: string): Map<number, PlayerSeasonTotals> {
+      const rows = db
+        .prepare(
+          `SELECT player_code,
+                  COUNT(*) AS appearances,
+                  SUM(minutes) AS minutes,
+                  SUM(COALESCE(starts, minutes >= 60)) AS starts,
+                  SUM(COALESCE(expected_goals, 0)) AS xg,
+                  SUM(COALESCE(expected_assists, 0)) AS xa,
+                  SUM(bonus) AS bonus,
+                  SUM(saves) AS saves,
+                  SUM(yellow_cards) AS yellow_cards,
+                  SUM(red_cards) AS red_cards,
+                  SUM(defensive_contribution) AS dc,
+                  SUM(total_points) AS total_points
+           FROM player_fixture_history
+           WHERE season = ? AND minutes > 0
+           GROUP BY player_code`,
+        )
+        .all(season) as Record<string, number | null>[];
+      return new Map(
+        rows.map((r) => [
+          Number(r.player_code),
+          {
+            appearances: Number(r.appearances),
+            minutes: Number(r.minutes),
+            starts: Number(r.starts),
+            expectedGoals: Number(r.xg),
+            expectedAssists: Number(r.xa),
+            bonus: Number(r.bonus),
+            saves: Number(r.saves),
+            yellowCards: Number(r.yellow_cards),
+            redCards: Number(r.red_cards),
+            defensiveContribution: r.dc === null ? null : Number(r.dc),
+            totalPoints: Number(r.total_points),
+          },
+        ]),
+      );
+    },
+
+    /**
+     * Each player's average points over their last `limit` appearances against every club, and their
+     * overall average, using seasons before `beforeSeason`.
+     */
+    headToHeadAverages(beforeSeason: string, limit: number): HeadToHeadAverages {
+      const pairs = db
+        .prepare(
+          `SELECT player_code, opponent_code, COUNT(*) AS meetings, AVG(total_points) AS average
+           FROM (
+             SELECT player_code, opponent_code, total_points,
+                    ROW_NUMBER() OVER (PARTITION BY player_code, opponent_code ORDER BY kickoff_time DESC) AS n
+             FROM player_fixture_history
+             WHERE season < ? AND minutes > 0
+           )
+           WHERE n <= ?
+           GROUP BY player_code, opponent_code`,
+        )
+        .all(beforeSeason, limit) as { player_code: number; opponent_code: number; meetings: number; average: number }[];
+      const overall = db
+        .prepare(
+          `SELECT player_code, AVG(total_points) AS average FROM player_fixture_history
+           WHERE season < ? AND minutes > 0 GROUP BY player_code`,
+        )
+        .all(beforeSeason) as { player_code: number; average: number }[];
+
+      return {
+        byOpponent: new Map(
+          pairs.map((r) => [`${r.player_code}:${r.opponent_code}`, { meetings: r.meetings, averagePoints: r.average }]),
+        ),
+        overall: new Map(overall.map((r) => [r.player_code, r.average])),
+      };
     },
 
     clear(): void {

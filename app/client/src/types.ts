@@ -42,6 +42,7 @@ export interface PlayerView {
   selectedByPercent: number;
   gameweekPoints: number;
   pointsForMe: number;
+  fplExpectedPoints: number; // FPL's own forecast for the next gameweek (0 if none)
   status: string;
   news: string;
   chanceOfPlayingNextRound: number | null;
@@ -182,4 +183,60 @@ export interface ScoutClubOption {
 
 export interface ScoutOptionsResponse {
   clubs: ScoutClubOption[];
+}
+
+// Mirror of server/src/models/projections.ts — keep in sync.
+
+export interface PointsBreakdown {
+  appearance: number;
+  goals: number;
+  assists: number;
+  cleanSheet: number;
+  goalsConceded: number;
+  saves: number;
+  bonus: number;
+  defensiveContribution: number;
+  cards: number;
+}
+
+export interface FixtureProjection {
+  opponent: string;
+  isHome: boolean;
+  difficulty: number;
+  points: number;
+  breakdown: PointsBreakdown;
+  expectedMinutes: number;
+  startChance: number;
+  cleanSheetChance: number;
+  expectedGoals: number;
+  expectedAssists: number;
+  headToHeadFactor: number;
+}
+
+export interface GameweekProjection {
+  gameweek: number;
+  points: number;
+  fixtures: FixtureProjection[]; // empty = blank, 2 = double gameweek
+}
+
+export interface PlayerProjection {
+  id: number;
+  webName: string;
+  position: Position;
+  clubShortName: string;
+  price: number;
+  status: string;
+  news: string;
+  pickPosition: number | null;
+  fplExpectedPoints: number | null;
+  gameweeks: GameweekProjection[];
+  nextGameweekPoints: number;
+  horizonPoints: number;
+}
+
+export interface ProjectionsResponse {
+  gameweeks: number[];
+  squad: PlayerProjection[];
+  top: Record<Position, PlayerProjection[]>;
+  cache: CacheInfo;
 }

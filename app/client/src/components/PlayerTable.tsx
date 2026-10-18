@@ -17,6 +17,13 @@ const COLUMNS: Column[] = [
   { key: 'price', label: '£', title: 'Price (£m)', format: (v) => v.toFixed(1) },
   { key: 'form', label: 'Form', title: 'FPL form (avg pts last 30 days)', format: (v) => v.toFixed(1) },
   { key: 'gameweekPoints', label: 'GW', title: 'Points this gameweek' },
+  {
+    key: 'fplExpectedPoints',
+    label: 'xP',
+    title: "FPL's predicted points for the next gameweek",
+    // Missing in teams cached by an older server version.
+    format: (v) => (v ?? 0).toFixed(1),
+  },
   { key: 'pointsForMe', label: 'For me', title: 'Points this player has earned for your team this season' },
   { key: 'totalPoints', label: 'Total', title: 'Season total points' },
   { key: 'pointsPerGame', label: 'PPG', title: 'Points per game', format: (v) => v.toFixed(1) },

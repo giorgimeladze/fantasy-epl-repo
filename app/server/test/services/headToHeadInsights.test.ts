@@ -32,6 +32,9 @@ function record(overrides: Partial<FixtureRecord> = {}): FixtureRecord {
     expectedGoals: 0,
     expectedAssists: 0,
     defensiveContribution: null,
+    position: null,
+    starts: null,
+    expectedPoints: null,
     ...overrides,
   };
 }
