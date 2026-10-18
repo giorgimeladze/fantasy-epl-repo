@@ -16,7 +16,7 @@ npm workspaces monorepo:
   - `src/scripts/backtest.ts` — `npm run backtest [-- <season>]`: scores the model against a past season in SQLite.
   - `src/models/` — `fpl.ts` (raw FPL API shapes, only the fields we use), `team.ts` / `auth.ts` / `headToHead.ts` / `projections.ts` (our API contract).
   - `src/middleware/` — `requireAuth`, error handler.
-  - `test/` — Mocha specs (`*.test.ts`, run through tsx), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/setup.ts` (in-memory DB + mock team ID).
+  - `test/` — end-to-end Mocha specs, one per endpoint group (`*.test.ts`, run through tsx), `test/helpers/namespace.ts` (typed client for every endpoint, `loginAsAdmin`, `useTestEnvironment`, `withTeamId` / `withoutAdminCredentials` / `withClockAhead`), `test/mocks/fpl/*.json` (mocked FPL responses), `test/mocks/history/<season>/` (mocked past-season CSVs), `test/helpers/mockFplApi.ts` (stubs global `fetch`), `test/setup.ts` (in-memory DB + mock team ID).
 - `app/client/` — React 19 + Vite + TypeScript SPA.
   - `src/api.ts` — the only place that calls `fetch`; handles the bearer token.
   - `src/types.ts` — **mirror of `app/server/src/models/team.ts`, `auth.ts`, `headToHead.ts` and `projections.ts`**. When you change the API contract, update both.
@@ -42,12 +42,13 @@ Always run `npm run typecheck` and `npm test` after changes.
 - Never call the FPL API from the browser (CORS + rate limits). Go through `fplClient`, which caches responses; finished gameweeks are cached much longer than live data.
 - Prices from FPL are integers in tenths of £m (`now_cost: 105` = £10.5m). Convert in `teamService`, not in the client.
 - Throw `HttpError` (from `utils/httpError.ts`) for expected failures; the error middleware turns it into `{ "error": string }` JSON.
-- Keep scoring rules (multipliers, autosubs, captaincy) in `pointsCalculator.ts` as pure functions with tests. Prediction rules live in `projectionModel.ts`, also pure; check model changes with `npm run backtest` and record the numbers in the spec.
+- Keep scoring rules (multipliers, autosubs, captaincy) in `pointsCalculator.ts` as pure functions, covered through the endpoint tests (`team.test.ts` checks "points for me"). Prediction rules live in `projectionModel.ts`, also pure; check model changes with `npm run backtest` and record the numbers in the spec.
 - Plain CSS in `app/client/src/styles.css`; no UI framework.
 - Schema changes: **append** a new SQL string to `MIGRATIONS` in `src/db/database.ts`; never edit an existing entry.
 - Match players and clubs across seasons by `code`, never by `id` (FPL re-numbers ids every season).
-- Tests must not hit the network. Use `mockFplApi()` in `beforeEach` and `restore()` in `afterEach`; clear `teamCacheRepository()` between tests. Add new FPL scenarios as JSON files in `test/mocks/fpl/`.
-- New behaviour in services or routes needs a Mocha test.
+- Tests are end to end only: go through the HTTP API with the client in `test/helpers/namespace.ts` (add a method there for every new endpoint), no unit tests of single functions.
+- Tests must not hit the network. Call `useTestEnvironment()` inside each top-level `describe` (fresh SQLite caches + FPL mock per test). To change FPL responses mid-test call `mockFplApi(overrides)`; check requests with `fplCalls` / `historyCalls` and `resetCalls()`. Add new FPL scenarios as JSON files in `test/mocks/fpl/`.
+- New behaviour in services or routes needs an E2E test.
 
 ## Gotchas
 

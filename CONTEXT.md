@@ -82,7 +82,7 @@ Three layers on the server:
 
 ## Testing approach
 
-Mocha specs under `app/server/test/`. The FPL API is never called: `mockFplApi()` swaps global `fetch` for a router that serves JSON from `app/server/test/mocks/fpl/`. The mock season (team `123456`) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `teamService.test.ts`. SQLite runs in-memory (`DATABASE_PATH=:memory:`).
+End-to-end Mocha specs under `app/server/test/`, calling the HTTP API through `test/helpers/namespace.ts`. The FPL API is never called: `mockFplApi()` swaps global `fetch` for a router that serves JSON from `app/server/test/mocks/fpl/`. The mock season (team `123456`) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `team.test.ts`. SQLite runs in-memory (`DATABASE_PATH=:memory:`).
 
 ## Security posture
 

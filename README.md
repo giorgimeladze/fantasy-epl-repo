@@ -97,18 +97,15 @@ npm test                         # all server tests
 npm run test:watch -w app/server     # re-run on change
 ```
 
+All tests are end to end: they call the HTTP API through the typed client in `test/helpers/namespace.ts`, with the FPL API and the history source mocked and SQLite in memory.
+
 | File | Covers |
 | --- | --- |
-| `test/services/pointsCalculator.test.ts` | Captain/vice/triple captain, autosubs, bench boost, "points for me" |
-| `test/services/teamService.test.ts` | Building the team from mocked FPL data, the 30-minute SQLite cache, error mapping |
-| `test/services/authService.test.ts` | Login, session expiry, logout |
-| `test/services/headToHeadService.test.ts` | Last 4 matches vs the next opponent across seasons, summaries, caching, scouting any player, picker options |
-| `test/services/headToHeadInsights.test.ts` | What earned or cost points per position, results, verdicts |
-| `test/services/historyImporter.test.ts` | Season helpers, CSV → records, import-once and skipping missing seasons |
-| `test/db/teamCacheRepository.test.ts` | Migrations and the cache table: read, upsert, delete |
-| `test/db/fixtureHistoryRepository.test.ts` | Storing seasons, querying matches against an opponent |
-| `test/utils/csv.test.ts` | CSV parsing (quotes, CRLF, blank lines) |
-| `test/routes.test.ts` | HTTP endpoints end to end (auth, `/api/team`, `/api/head-to-head` and its scout endpoints, cache, errors) |
+| `test/app.test.ts` | Health check, JSON 404, every protected endpoint rejects missing or invalid tokens |
+| `test/auth.test.ts` | Login, validation, unconfigured credentials, session expiry, logout |
+| `test/team.test.ts` | `/api/team`: building the team from mocked FPL data, "points for me" (captaincy, autosubs, transfers), the 30-minute SQLite cache, error mapping |
+| `test/headToHead.test.ts` | `/api/head-to-head`: last 4 matches vs the next opponent across seasons, insights, summaries, caching, importing past seasons once; the scout picker and single-player endpoints |
+| `test/projections.test.ts` | `/api/projections`: predictions per gameweek, double and blank gameweeks, breakdowns, injuries, head-to-head factor, top players, caching |
 
 The mock data describes a 2-gameweek season for team `123456` (GW3–5 still to play; Arsenal have a double and Man City a blank in GW5). GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. To add a scenario, drop a JSON file in `test/mocks/fpl/` and map it with `mockFplApi({ '/path/': 'file.json' })`. You can also pass an inline response, e.g. `{ status: 503 }`.
 
