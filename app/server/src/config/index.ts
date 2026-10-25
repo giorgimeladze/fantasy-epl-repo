@@ -57,6 +57,20 @@ export const config = {
     optionsShown: 5, // per number of transfers
   },
 
+  planner: {
+    // Free Hit / Wildcard squads are built by repeated best transfers from this many candidates per position.
+    squadSearchCandidates: 15,
+    squadSearchMaxSteps: 40,
+    // Extra predicted points over the horizon, beyond the best normal transfers, for "consider the Wildcard".
+    // A rule of thumb, not measured.
+    wildcardMinGain: 10,
+    rotationPairsShown: 5,
+    rotationMinStarts: 2, // each club of a pair must be the better one in at least this many gameweeks
+    goalkeeperPairMaxPrice: 10, // £m: rotating keepers is a budget tactic
+    marketPerPosition: 40, // players offered when adding a transfer to the draft plan
+    maxDraftTransfers: 20,
+  },
+
   auth: {
     // Single admin account (personal tool, see CONTEXT.md).
     username: env.adminUsername,

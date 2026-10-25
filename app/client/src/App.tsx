@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage.tsx';
 import { HeadToHeadPage } from './pages/HeadToHeadPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { NextGameweekPage } from './pages/NextGameweekPage.tsx';
+import { PlannerPage } from './pages/PlannerPage.tsx';
 import { PredictionsPage } from './pages/PredictionsPage.tsx';
 import { TransfersPage } from './pages/TransfersPage.tsx';
 
@@ -40,6 +41,8 @@ export function App() {
           <NextGameweekPage key="next-gameweek" onUnauthorized={handleSessionEnd} />
         ) : route === 'transfers' ? (
           <TransfersPage key="transfers" onUnauthorized={handleSessionEnd} />
+        ) : route === 'planner' ? (
+          <PlannerPage key="planner" onUnauthorized={handleSessionEnd} />
         ) : route === 'predictions' ? (
           <PredictionsPage key="predictions" onUnauthorized={handleSessionEnd} />
         ) : (

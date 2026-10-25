@@ -65,6 +65,13 @@ const MIGRATIONS: string[] = [
   `DROP TABLE team_cache`,
   // Spec 004: projections gained playChance, selectedByPercent and differentials.
   `DELETE FROM response_cache`,
+  // Spec 006: the manager's one draft transfer plan; projections gained the model's inputs per fixture.
+  `CREATE TABLE draft_plan (
+     team_id    INTEGER PRIMARY KEY,
+     transfers  TEXT    NOT NULL,
+     updated_at INTEGER NOT NULL
+   );
+   DELETE FROM response_cache`,
 ];
 
 function migrate(db: DatabaseSync): void {

@@ -11,6 +11,7 @@ Each major update to the codebase gets its own spec: what needs to be done, what
 | 003 | [Predicted points](003-predicted-points.md) | Done |
 | 004 | [Next gameweek: best XI, captain and extras](004-next-gameweek.md) | Done |
 | 005 | [Transfer suggestions](005-transfer-suggestions.md) | Done |
+| 006 | [Planner and explained numbers](006-planner.md) | Done |
 
 ## Conventions
 

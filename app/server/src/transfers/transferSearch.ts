@@ -94,7 +94,12 @@ const candidateCache = new WeakMap<SquadPlayer, Candidate[]>();
 function candidatesOf(p: SquadPlayer): Candidate[] {
   let candidates = candidateCache.get(p);
   if (!candidates) {
-    candidates = p.gameweeks.map((g) => ({ id: p.id, position: p.position, points: g.points, playChance: g.playChance }));
+    candidates = p.gameweeks.map((g) => ({
+      id: p.id,
+      position: p.position,
+      points: g.points,
+      playChance: g.playChance,
+    }));
     candidateCache.set(p, candidates);
   }
   return candidates;

@@ -2,7 +2,7 @@
 
 - **Written:** 2026-10-17
 - **Source:** review of [Fantasy Football Fix](https://www.fantasyfootballfix.com/) ([premium features](https://www.fantasyfootballfix.com/premium), [rotation tool](https://www.fantasyfootballfix.com/blog-index/go-head-head-our-new-fixture-rotation-tool/)) against this codebase.
-- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)); Phases 2 and 5 done ([spec 004](../specs/004-next-gameweek.md)); Phase 3 done ([spec 005](../specs/005-transfer-suggestions.md)). Phase 4 is backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
+- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)); Phases 2 and 5 done ([spec 004](../specs/004-next-gameweek.md)); Phase 3 done ([spec 005](../specs/005-transfer-suggestions.md)); Phase 4 and "explained, not a black box" done ([spec 006](../specs/006-planner.md)). The mini-league and own-record ideas in section 4 are backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
 
 The goal: recommendations for the **next gameweek**: who to start, bench and captain, and who to transfer in and out. Only free data (the FPL API and the vaastav history we already import).
 
@@ -60,15 +60,15 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
 - [x] **Show "save the transfer" as an option:** often the right call with banking. *A banked transfer is valued at 1.5 points (rule of thumb, not measured).*
 - [x] **Output:** "Sell A → buy B, +X predicted points over 5 GWs, £Y left", with the breakdown (fixtures, form, availability, head-to-head).
 
-### Phase 4: Planning ahead
+### Phase 4: Planning ahead: done, see [spec 006](../specs/006-planner.md)
 
-- [ ] **One draft plan:** queue transfers over the next 5 GWs and see predicted totals update. FFFix allows 5 drafts; one is enough for us at first.
-- [ ] **Chip timing:**
+- [x] **One draft plan:** queue transfers over the next 5 GWs and see predicted totals update. FFFix allows 5 drafts; one is enough for us at first. *Stored in SQLite, rule-checked; each week also suggests the next best transfer.*
+- [x] **Chip timing:** *availability from FPL's chip windows (two per season since 2025-26). Free Hit and Wildcard squads come from repeated best transfers, not a solver.*
   - Bench Boost: the GW with the highest predicted bench total.
   - Triple Captain: the best captain in a double GW.
   - Free Hit: blank GWs.
   - Wildcard: when the gap between your squad and the best possible squad is largest.
-- [ ] **Rotation planner:** try every pair of GKs or defences (20×19 club pairs) and pick the one whose fixtures cover each other best.
+- [x] **Rotation planner:** try every pair of GKs or defences (20×19 club pairs) and pick the one whose fixtures cover each other best. *Changed: only real rotations (each club starts 2+ weeks) and keeper pairs ≤ £10m, else "Arsenal + anyone" topped the list.*
 
 ### Phase 5: Easy extras from the same FPL data: done, see [spec 004](../specs/004-next-gameweek.md)
 
@@ -80,7 +80,7 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
 - [ ] **Your mini-league instead of the top 10k:** `/leagues-classic/{id}/standings/` and rivals' `/entry/{id}/event/{gw}/picks/` are public. Show **effective ownership in your league**, who rivals captain, and which differentials gain on the leader. More useful than elite data for winning a mini-league, and only ~10–20 requests.
 - [ ] **Your own record:** we already have past picks and "points for me". Add "your captain vs the best option each GW" and "transfers that paid off", to tune how much risk you take.
 - [x] **Head-to-head as a model input:** FFFix doesn't use player-vs-opponent history. Use it with a small weight and show it as a reason ("good record vs WOL"). *Done (003/004); the backtest shows it adds almost nothing.*
-- [ ] **Explained, not a black box:** every number shows its breakdown (minutes × xG × fixture factor). With one team to manage, being able to check the reasoning matters more than an "AI" score.
+- [x] **Explained, not a black box:** every number shows its breakdown (minutes × xG × fixture factor). With one team to manage, being able to check the reasoning matters more than an "AI" score. *Predictions show each line as a formula; lineups, transfers, chips and the plan show what they add up from.*
 - [ ] **Light on the FPL API:** cache projections per GW and reuse the history already in SQLite. Never call FPL from the browser.
 
 ## 5. What not to implement (or leave until much later)

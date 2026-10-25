@@ -40,5 +40,9 @@ export function apiClient(token?: string) {
     projections: ({ refresh = false } = {}) => get('/projections', refresh),
     nextGameweek: ({ refresh = false } = {}) => get('/next-gameweek', refresh),
     transfers: ({ refresh = false } = {}) => get('/transfers', refresh),
+    planner: ({ refresh = false } = {}) => get('/planner', refresh),
+    draft: () => get('/planner/draft'),
+    saveDraft: (body: object) => withToken(request(app).put('/api/planner/draft')).send(body),
+    clearDraft: () => withToken(request(app).delete('/api/planner/draft')),
   };
 }

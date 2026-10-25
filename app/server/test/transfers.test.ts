@@ -87,7 +87,13 @@ describe('GET /api/transfers', () => {
     });
 
     it('keeps the bank unchanged through a Wildcard or Free Hit', async () => {
-      withHistory([0, 0, 9, 0, 6, 1], [{ name: 'wildcard', event: 3 }, { name: 'freehit', event: 5 }]);
+      withHistory(
+        [0, 0, 9, 0, 6, 1],
+        [
+          { name: 'wildcard', event: 3 },
+          { name: 'freehit', event: 5 },
+        ],
+      );
       const t: TransfersResponse = (await api.transfers()).body;
       assert.deepEqual(
         t.freeTransferHistory.map((w) => [w.chip, w.freeAfter]),
@@ -161,10 +167,7 @@ describe('GET /api/transfers', () => {
       const t: TransfersResponse = (await api.transfers()).body;
 
       assert.equal(moves(t.recommended), 'Gvardiol>Dias');
-      assert.deepEqual(
-        t.single.map(moves),
-        ['Gvardiol>Dias', 'N.Jackson>Delap'],
-      );
+      assert.deepEqual(t.single.map(moves), ['Gvardiol>Dias', 'N.Jackson>Delap']);
       // Havertz (injured, Arsenal) for Delap would make 4 Chelsea players.
       assert.ok(!t.single.some((o) => moves(o) === 'Havertz>Delap'));
 
@@ -172,6 +175,9 @@ describe('GET /api/transfers', () => {
       assert.equal(dias!.bankAfter, 1); // 0.5 + 6.0 − 5.5
       assert.equal(delap!.bankAfter, 2.3); // 0.5 + 7.3 − 5.5
       assert.equal(delap!.moves[0]!.sellingPrice, 7.3);
+      // Every gain is against the squad's own points each week.
+      assert.equal(t.squadPerGameweek.length, 3);
+      assert.ok(Math.abs(sum(t.squadPerGameweek) - t.squadPoints) < 0.05);
       for (const option of [...t.single, ...t.double]) {
         assert.ok(option.bankAfter >= 0);
         for (const m of option.moves) assert.equal(m.in.position, m.out.position);
@@ -190,7 +196,10 @@ describe('GET /api/transfers', () => {
         '75% chance of playing (Knock - 75% chance of playing)',
       ]);
       assert.equal(incoming.reasons[0], 'fixtures: CHE (H), LIV (A), blank');
-      assert.ok(incoming.reasons.some((r) => r.startsWith('clean sheet ')), incoming.reasons.join(' | '));
+      assert.ok(
+        incoming.reasons.some((r) => r.startsWith('clean sheet ')),
+        incoming.reasons.join(' | '),
+      );
       assert.deepEqual(incoming.gameweekPoints.length, 3);
       assert.equal(incoming.gameweekPoints[2], 0); // Man City blank in GW5
       assert.equal(gain, round2(incoming.horizonPoints - out.horizonPoints));
@@ -232,7 +241,10 @@ describe('GET /api/transfers', () => {
       assert.equal(moves(small.recommended), 'Gvardiol>Dias');
 
       // When each move alone gains more than 4, the −4 for the second one is worth it.
-      withPlayers([{ ...DELAP, expected_goals: '9.00' }, { ...DIAS, expected_goals: '6.00' }]);
+      withPlayers([
+        { ...DELAP, expected_goals: '9.00' },
+        { ...DIAS, expected_goals: '6.00' },
+      ]);
       const big: TransfersResponse = (await api.transfers({ refresh: true })).body;
       assert.deepEqual(moves(big.recommended).split(',').sort(), ['Gvardiol>Dias', 'N.Jackson>Delap']);
       for (const single of big.single.slice(0, 2)) assert.ok(single.gain > 4, moves(single));

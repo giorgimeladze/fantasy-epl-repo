@@ -1,9 +1,12 @@
 import type {
+  DraftPlanResponse,
   HeadToHeadResponse,
   LoginResponse,
   MyTeamResponse,
   PlayerHeadToHeadResponse,
   NextGameweekResponse,
+  PlannedTransfer,
+  PlannerResponse,
   ProjectionsResponse,
   ScoutOptionsResponse,
   TransfersResponse,
@@ -86,6 +89,22 @@ export const api = {
 
   getTransfers(forceRefresh = false): Promise<TransfersResponse> {
     return request<TransfersResponse>(forceRefresh ? '/transfers?refresh=true' : '/transfers');
+  },
+
+  getPlanner(forceRefresh = false): Promise<PlannerResponse> {
+    return request<PlannerResponse>(forceRefresh ? '/planner?refresh=true' : '/planner');
+  },
+
+  getDraft(): Promise<DraftPlanResponse> {
+    return request<DraftPlanResponse>('/planner/draft');
+  },
+
+  saveDraft(transfers: PlannedTransfer[]): Promise<DraftPlanResponse> {
+    return request<DraftPlanResponse>('/planner/draft', { method: 'PUT', body: JSON.stringify({ transfers }) });
+  },
+
+  clearDraft(): Promise<DraftPlanResponse> {
+    return request<DraftPlanResponse>('/planner/draft', { method: 'DELETE' });
   },
 
   getProjections(forceRefresh = false): Promise<ProjectionsResponse> {

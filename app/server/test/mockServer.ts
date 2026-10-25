@@ -36,6 +36,12 @@ const CLUBS = [
   { id: 4, code: 8, name: 'Chelsea', short_name: 'CHE' },
 ];
 
+/** Each chip twice, one per half of the season (FPL since 2025-26). */
+const CHIPS = ['wildcard', 'freehit', 'bboost', '3xc'].flatMap((name, i) => [
+  { id: i * 2 + 1, name, number: 1, start_event: 1, stop_event: 19, chip_type: 'transfer' },
+  { id: i * 2 + 2, name, number: 2, start_event: 20, stop_event: 38, chip_type: 'transfer' },
+]);
+
 const POSITIONS = [{ id: 1, singular_name_short: 'GKP' }, { id: 2, singular_name_short: 'DEF' }, { id: 3, singular_name_short: 'MID' }, { id: 4, singular_name_short: 'FWD' }];
 
 /** Every player starts from these values; each entry in PLAYERS only lists what differs. */
@@ -92,7 +98,7 @@ const PLAYERS: FplElement[] = [
 
 /** A fresh copy of bootstrap-static, so a test can edit it and serve it with `fplReturns`. */
 export function bootstrap(): FplBootstrap {
-  return structuredClone({ events: GAMEWEEKS, teams: CLUBS, element_types: POSITIONS, elements: PLAYERS });
+  return structuredClone({ events: GAMEWEEKS, teams: CLUBS, element_types: POSITIONS, elements: PLAYERS, chips: CHIPS });
 }
 
 const idOf = (webName: string) => PLAYERS.find((p) => p.web_name === webName)!.id;

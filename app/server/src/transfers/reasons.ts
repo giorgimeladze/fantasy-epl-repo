@@ -15,4 +15,3 @@ export function transferReasons(player: PlayerProjection, form: number): string[
   reasons.push(...sourceReasons(fixtures), ...headToHeadReasons(fixtures));
   return reasons;
 }
-

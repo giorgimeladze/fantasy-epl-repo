@@ -53,6 +53,12 @@ function Summary({ data }: { data: NextGameweekResponse }) {
         </div>
       </dl>
       <p className="muted next-note">
+        Best XI: starters {pts(best.expectedPoints - best.captainPoints - best.autosubPoints)} + armband{' '}
+        {pts(best.captainPoints)} + automatic substitutions {pts(best.autosubPoints)}. Yours: starters{' '}
+        {pts(current.expectedPoints - current.captainPoints - current.autosubPoints)} + armband{' '}
+        {pts(current.captainPoints)} + automatic substitutions {pts(current.autosubPoints)}.
+      </p>
+      <p className="muted next-note">
         Predicted points include the captain's double points and expected automatic substitutions. FPL only shows next
         gameweek's picks after the deadline, so this compares with your GW{data.comparedWithGameweek} lineup.
       </p>

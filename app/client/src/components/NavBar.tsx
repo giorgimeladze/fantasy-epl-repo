@@ -4,6 +4,7 @@ const LINKS: Array<{ route: Route; label: string }> = [
   { route: 'team', label: 'My team' },
   { route: 'next-gameweek', label: 'Next GW' },
   { route: 'transfers', label: 'Transfers' },
+  { route: 'planner', label: 'Planner' },
   { route: 'predictions', label: 'Predictions' },
   { route: 'head-to-head', label: 'Head-to-head' },
 ];

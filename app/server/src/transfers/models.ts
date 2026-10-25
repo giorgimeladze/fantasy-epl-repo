@@ -64,6 +64,8 @@ export interface TransfersResponse {
   squad: SquadSale[]; // by position, then selling price
   /** The current squad's predicted points over the horizon. */
   squadPoints: number;
+  /** The same per gameweek: best XI + armband + expected autosubs. Each option's gain is against these. */
+  squadPerGameweek: number[];
   recommended: TransferOption;
   save: TransferOption;
   single: TransferOption[]; // best 1-transfer options, by score

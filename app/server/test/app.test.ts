@@ -35,6 +35,10 @@ describe('API', () => {
         await client.projections(),
         await client.nextGameweek(),
         await client.transfers(),
+        await client.planner(),
+        await client.draft(),
+        await client.saveDraft({ transfers: [] }),
+        await client.clearDraft(),
       ];
 
       for (const res of responses) {

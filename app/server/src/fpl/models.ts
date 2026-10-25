@@ -70,11 +70,22 @@ export interface FplPriceChangeProjection {
   likelihood: number; // −5 (fall almost certain) … 5 (rise almost certain)
 }
 
+/** A chip and the gameweeks it can be played in (since 2025-26 each chip comes twice, one per half). */
+export interface FplChip {
+  id: number;
+  name: string; // "wildcard" | "freehit" | "bboost" | "3xc" | …
+  number: number;
+  start_event: number;
+  stop_event: number;
+  chip_type: string;
+}
+
 export interface FplBootstrap {
   events: FplEvent[];
   teams: FplTeam[];
   elements: FplElement[];
   element_types: FplElementType[];
+  chips?: FplChip[]; // optional: older seasons didn't publish chip windows
 }
 
 export interface FplEntry {

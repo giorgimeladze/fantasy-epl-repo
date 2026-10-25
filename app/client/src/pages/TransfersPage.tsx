@@ -10,7 +10,12 @@ const money = (value: number) => `£${value.toFixed(1)}m`;
 const pct = (value: number) => `${Math.round(value * 100)}%`;
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-const CHIPS: Record<string, string> = { wildcard: 'Wildcard', freehit: 'Free Hit', bboost: 'Bench Boost', '3xc': 'Triple Captain' };
+const CHIPS: Record<string, string> = {
+  wildcard: 'Wildcard',
+  freehit: 'Free Hit',
+  bboost: 'Bench Boost',
+  '3xc': 'Triple Captain',
+};
 
 function horizonLabel(gameweeks: number[]): string {
   if (gameweeks.length === 0) return '';
@@ -49,7 +54,15 @@ function PlayerLine({ player, label }: { player: TransferPlayer; label: string }
   );
 }
 
-function OptionCard({ option, data, best = false }: { option: TransferOption; data: TransfersResponse; best?: boolean }) {
+function OptionCard({
+  option,
+  data,
+  best = false,
+}: {
+  option: TransferOption;
+  data: TransfersResponse;
+  best?: boolean;
+}) {
   return (
     <li className={best ? 'transfer-option best' : 'transfer-option'}>
       <div className="transfer-headline">
@@ -63,16 +76,40 @@ function OptionCard({ option, data, best = false }: { option: TransferOption; da
       ))}
       {option.moves.length > 0 && (
         <div className="muted transfer-detail">
-          Squad {signed(option.gain)} ({option.gainPerGameweek.map(signed).join(', ')})
-          {option.hitCost > 0 && ` − ${option.hitCost} hit`} · {option.freeTransfersNext} free transfer
-          {option.freeTransfersNext === 1 ? '' : 's'} next week
+          <div>
+            Squad points per gameweek:{' '}
+            {data.gameweeks
+              .map((gw, i) => {
+                const before = data.squadPerGameweek[i] ?? 0;
+                const gain = option.gainPerGameweek[i] ?? 0;
+                return `GW${gw} ${pts(before)} → ${pts(before + gain)}`;
+              })
+              .join(' · ')}
+          </div>
+          <div>
+            {signed(option.gain)} over the horizon
+            {option.hitCost > 0 && ` − ${option.hitCost} hit = ${signed(option.netGain)}`}
+            {option.score !== option.netGain &&
+              ` − ${pts(option.netGain - option.score)} for the banked transfer given up = ${signed(option.score)} vs saving`}{' '}
+            · {option.freeTransfersNext} free transfer{option.freeTransfersNext === 1 ? '' : 's'} next week
+          </div>
         </div>
       )}
     </li>
   );
 }
 
-function OptionList({ title, options, data, empty }: { title: string; options: TransferOption[]; data: TransfersResponse; empty: string }) {
+function OptionList({
+  title,
+  options,
+  data,
+  empty,
+}: {
+  title: string;
+  options: TransferOption[];
+  data: TransfersResponse;
+  empty: string;
+}) {
   return (
     <section>
       <h2>{title}</h2>

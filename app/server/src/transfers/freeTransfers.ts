@@ -29,8 +29,10 @@ export function countFreeTransfers(
   let available = 0;
   const weeks = played.map((gw, i): FreeTransferWeek => {
     const chip = chipByGameweek.get(gw.event) ?? null;
-    if (i === 0) available = 1; // picking the first squad is free
-    else if (!(chip && BANK_KEEPING_CHIPS.has(chip))) available = freeTransfersAfter(available, gw.event_transfers, max);
+    if (i === 0)
+      available = 1; // picking the first squad is free
+    else if (!(chip && BANK_KEEPING_CHIPS.has(chip)))
+      available = freeTransfersAfter(available, gw.event_transfers, max);
     return { gameweek: gw.event, transfers: gw.event_transfers, chip, freeAfter: available };
   });
   return { available, weeks };

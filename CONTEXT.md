@@ -72,6 +72,7 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **Gameweeks:** a double gameweek sums its fixtures; a blank gameweek is 0.
 - **Head-to-head factor:** at most ±15 % on goals, assists and bonus. The backtest shows it barely matters.
 - **FPL's `ep_next`** is shown alongside, but is just the player's form for most players.
+- **Explained:** every fixture also returns the model's `inputs` (availability, start share, minutes per start, rates per 90, opponent defence/attack, own defence, home factor, expected goals against, saves and defensive actions per match, points per goal). Each breakdown line is a formula over them, e.g. goals = xG/90 × minutes/90 × opponent defence × home factor × head-to-head × points per goal. The Predictions page shows those formulas; the test suite recomputes them.
 - **Backtest:** `npm run backtest [-- <season>]` replays a past season from `player_fixture_history`. That table also stores each match's position, starts and FPL's `xP` (from vaastav `merged_gw.csv`; its xP has gaps, e.g. 0 from GW7 of 2025-26).
 
 ## Next gameweek: best XI and captain
@@ -98,12 +99,25 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **Choice:** `score = gain − 4 × transfers beyond the free ones − 1.5 × (free transfers given up next week)`. Saving scores 0. With 5 banked, one transfer gives nothing up.
 - **Pairs** are only listed when they gain more than either move alone.
 
+## Planner
+
+`planner/` (`/api/planner`, `/api/planner/draft`, the Planner page) looks further ahead than one gameweek. Details in [spec 006](docs/specs/006-planner.md).
+
+- **Draft plan:** one saved list of planned transfers (`{ gameweek, outId, inId }`) in the `draft_plan` table. It's replayed every time on the latest predictions with the Transfers rules. Each week shows the best XI, armband and autosubs for the planned squad, free transfers (banked to 5), −4 hits, bank and a suggested next transfer. Saving a plan that breaks a rule is a 400 naming the move; on load, moves for past gameweeks or that no longer work are dropped with a warning. Players bought in the plan are assumed to keep today's price.
+- **Chips:** availability comes from `bootstrap-static` `chips` (each chip has a `start_event`–`stop_event` window; two windows per season since 2025-26) and the chips in `/entry/{id}/history/`. Values per gameweek in the horizon:
+  - **Bench Boost:** the best lineup's bench points minus the autosub points already expected.
+  - **Triple Captain:** the armband's value once more.
+  - **Free Hit:** the best squad for that week alone (same budget) minus yours.
+  - **Wildcard:** the best squad for the whole horizon minus yours. It's suggested when it beats the Transfers page's recommendation by `wildcardMinGain` (10) points.
+  - **Squad search:** the best squads come from repeated best free transfers (singles, then pairs) from 15 candidates per position until nothing improves, not from a solver.
+- **Rotation:** every pair of clubs, worth the sum of the better club each week. Goalkeepers use each club's first-choice keeper's predicted points, and only pairs costing ≤ £10m count. Defences use expected clean sheets. A pair only counts if each club starts at least 2 weeks.
+
 ## Caching
 
 Three layers on the server:
 
 1. **Past-season history** (`player_fixture_history`): permanent; seasons never change.
-2. **SQLite response cache** (`response_cache` table, `app/server/data/fpl.sqlite`): each page's assembled response is stored with its fetch time (keys `team:<teamId>`, `head-to-head:<teamId>`, `head-to-head:player:<id>`, `projections:<teamId>`, `next-gameweek:<teamId>`, `transfers:<teamId>`). Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (each page's Refresh button) bypasses it. Failed fetches are never cached.
+2. **SQLite response cache** (`response_cache` table, `app/server/data/fpl.sqlite`): each page's assembled response is stored with its fetch time (keys `team:<teamId>`, `head-to-head:<teamId>`, `head-to-head:player:<id>`, `projections:<teamId>`, `next-gameweek:<teamId>`, `transfers:<teamId>`, `planner:<teamId>`; the draft plan isn't cached). Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (each page's Refresh button) bypasses it. Failed fetches are never cached.
 3. **In-memory FPL response cache** (`fplClient`): finished-gameweek picks/live data for 24 h, everything else for 2 minutes. Speeds up a refetch (only the current gameweek is re-downloaded in practice) and is lost on restart.
 
 ## Testing approach

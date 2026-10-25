@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import type { FixtureProjection, GameweekProjection, PlayerProjection, PointsBreakdown } from '../types.ts';
 import { FixtureChip } from './FixtureChip.tsx';
+import { FixtureExplanation } from './FixtureExplanation.tsx';
 
 const BREAKDOWN_ROWS: Array<{ key: keyof PointsBreakdown; label: string }> = [
   { key: 'appearance', label: 'Appearance' },
@@ -58,58 +59,74 @@ function Breakdown({ player }: { player: PlayerProjection }) {
   const fixtures: Array<{ gameweek: number; fixture: FixtureProjection }> = player.gameweeks.flatMap((g) =>
     g.fixtures.map((fixture) => ({ gameweek: g.gameweek, fixture })),
   );
+  const [explained, setExplained] = useState(0);
   if (fixtures.length === 0) return <p className="muted">No fixtures in this period.</p>;
+  const selected = fixtures[Math.min(explained, fixtures.length - 1)]!;
 
   return (
-    <div className="table-wrap">
-      <table className="players breakdown">
-        <thead>
-          <tr>
-            <th>Expected points</th>
-            {fixtures.map(({ gameweek, fixture }) => (
-              <th key={`${gameweek}-${fixture.opponent}`} className="num">
-                GW{gameweek} {fixture.opponent} ({fixture.isHome ? 'H' : 'A'})
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {BREAKDOWN_ROWS.filter((row) => fixtures.some(({ fixture }) => fixture.breakdown[row.key] !== 0)).map(
-            (row) => (
-              <tr key={row.key}>
-                <td>{row.label}</td>
-                {fixtures.map(({ gameweek, fixture }) => (
-                  <td key={`${gameweek}-${fixture.opponent}`} className="num">
-                    {pts(fixture.breakdown[row.key])}
-                  </td>
-                ))}
-              </tr>
-            ),
-          )}
-          <tr className="breakdown-total">
-            <td>Total</td>
-            {fixtures.map(({ gameweek, fixture }) => (
-              <td key={`${gameweek}-${fixture.opponent}`} className="num">
-                {pts(fixture.points)}
-              </td>
-            ))}
-          </tr>
-          <tr className="breakdown-inputs">
-            <td>Based on</td>
-            {fixtures.map(({ gameweek, fixture }) => (
-              <td key={`${gameweek}-${fixture.opponent}`} className="num">
-                {fixture.expectedMinutes}′ · starts {pct(fixture.startChance)}
-                <br />
-                xG {fixture.expectedGoals.toFixed(2)} · xA {fixture.expectedAssists.toFixed(2)}
-                <br />
-                CS {pct(fixture.cleanSheetChance)}
-                {fixture.headToHeadFactor !== 1 && ` · H2H ×${fixture.headToHeadFactor.toFixed(2)}`}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="table-wrap">
+        <table className="players breakdown">
+          <thead>
+            <tr>
+              <th>Expected points</th>
+              {fixtures.map(({ gameweek, fixture }) => (
+                <th key={`${gameweek}-${fixture.opponent}`} className="num">
+                  GW{gameweek} {fixture.opponent} ({fixture.isHome ? 'H' : 'A'})
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {BREAKDOWN_ROWS.filter((row) => fixtures.some(({ fixture }) => fixture.breakdown[row.key] !== 0)).map(
+              (row) => (
+                <tr key={row.key}>
+                  <td>{row.label}</td>
+                  {fixtures.map(({ gameweek, fixture }) => (
+                    <td key={`${gameweek}-${fixture.opponent}`} className="num">
+                      {pts(fixture.breakdown[row.key])}
+                    </td>
+                  ))}
+                </tr>
+              ),
+            )}
+            <tr className="breakdown-total">
+              <td>Total</td>
+              {fixtures.map(({ gameweek, fixture }) => (
+                <td key={`${gameweek}-${fixture.opponent}`} className="num">
+                  {pts(fixture.points)}
+                </td>
+              ))}
+            </tr>
+            <tr className="breakdown-inputs">
+              <td>Based on</td>
+              {fixtures.map(({ gameweek, fixture }) => (
+                <td key={`${gameweek}-${fixture.opponent}`} className="num">
+                  {fixture.expectedMinutes}′ · starts {pct(fixture.startChance)}
+                  <br />
+                  xG {fixture.expectedGoals.toFixed(2)} · xA {fixture.expectedAssists.toFixed(2)}
+                  <br />
+                  CS {pct(fixture.cleanSheetChance)}
+                  {fixture.headToHeadFactor !== 1 && ` · H2H ×${fixture.headToHeadFactor.toFixed(2)}`}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="segmented explain-picker" role="group" aria-label="Explain a fixture">
+        {fixtures.map(({ gameweek, fixture }, index) => (
+          <button
+            key={`${gameweek}-${fixture.opponent}`}
+            className={fixture === selected.fixture ? 'active' : ''}
+            onClick={() => setExplained(index)}
+          >
+            GW{gameweek} {fixture.opponent}
+          </button>
+        ))}
+      </div>
+      <FixtureExplanation fixture={selected.fixture} gameweek={selected.gameweek} position={player.position} />
+    </>
   );
 }
 

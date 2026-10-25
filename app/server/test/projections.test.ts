@@ -53,6 +53,53 @@ describe('GET /api/projections', () => {
     assert.ok(fixture.breakdown.goals > 0 && fixture.expectedMinutes > 0);
   });
 
+  it('shows the inputs behind every number, so each line of the breakdown can be recomputed', async () => {
+    const { squad }: ProjectionsResponse = (await api.projections()).body;
+    const near = (actual: number, expected: number, what: string) =>
+      assert.ok(Math.abs(actual - expected) < 0.06, `${what}: ${actual} vs ${expected}`);
+    let checked = 0;
+
+    for (const p of squad) {
+      for (const f of p.gameweeks.flatMap((g) => g.fixtures)) {
+        const i = f.inputs;
+        const what = `${p.webName} vs ${f.opponent}`;
+        const startChance = i.availability * i.startShare;
+        const minutes = startChance * i.minutesPerStart + i.subChance * i.subMinutes;
+        const share90 = minutes / 90;
+        const attack = i.opponentDefence * i.venueFactor * f.headToHeadFactor;
+
+        near(f.startChance, startChance, `${what} start chance`);
+        assert.ok(Math.abs(f.expectedMinutes - minutes) <= 0.5, `${what} minutes`); // whole minutes in the response
+        near(f.breakdown.appearance, startChance + i.subChance + i.sixtyMinuteChance, `${what} appearance`);
+        near(f.breakdown.goals, i.goalsPer90 * share90 * attack * i.goalPoints, `${what} goals`);
+        near(f.breakdown.assists, i.assistsPer90 * share90 * attack * i.assistPoints, `${what} assists`);
+        near(
+          i.expectedGoalsAgainst,
+          (i.leagueGoalsPerMatch * i.opponentAttack * i.clubDefence) / i.venueFactor,
+          `${what} goals against`,
+        );
+        near(f.cleanSheetChance, Math.exp(-i.expectedGoalsAgainst), `${what} clean sheet chance`);
+        near(
+          f.breakdown.cleanSheet,
+          i.sixtyMinuteChance * f.cleanSheetChance * i.cleanSheetPoints,
+          `${what} clean sheet`,
+        );
+        near(f.breakdown.bonus, i.bonusPer90 * share90 * f.headToHeadFactor, `${what} bonus`);
+        near(f.breakdown.cards, -i.cardPointsPer90 * share90, `${what} cards`);
+        near(f.breakdown.defensiveContribution, startChance * i.defensiveContributionChance * 2, `${what} DC`);
+        assert.equal(i.venueFactor > 1, f.isHome);
+        checked++;
+      }
+    }
+    assert.ok(checked > 20, String(checked));
+    // FPL's points per goal for the position.
+    assert.deepEqual(
+      ['Raya', 'Saliba', 'Saka', 'Haaland'].map((n) => byName(squad, n).gameweeks[0]!.fixtures[0]!.inputs.goalPoints),
+      [10, 6, 5, 4],
+    );
+    assert.equal(byName(squad, 'Raya').gameweeks[0]!.fixtures[0]!.inputs.defensiveThreshold, null);
+  });
+
   it('uses FPL’s injury flags and shows FPL’s own forecast', async () => {
     const squad: PlayerProjection[] = (await api.projections()).body.squad;
     const havertz = byName(squad, 'Havertz'); // injured, 0 % chance next round
@@ -110,7 +157,11 @@ describe('GET /api/projections', () => {
     assert.deepEqual(body.differentials.MID, []);
     // Squad players are never differentials, however few managers own them.
     assert.ok(byName(body.squad, 'Raya').selectedByPercent < 10);
-    assert.ok(!Object.values(body.differentials).flat().some((p) => p.webName === 'Raya'));
+    assert.ok(
+      !Object.values(body.differentials)
+        .flat()
+        .some((p) => p.webName === 'Raya'),
+    );
   });
 
   it('serves repeat requests from the SQLite cache, and rebuilds on ?refresh=true', async () => {

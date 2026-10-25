@@ -2,6 +2,7 @@ import { config } from '../config/index.js';
 import { fixtureHistoryRepository, type HeadToHeadAverages } from '../history/fixtureHistoryRepository.js';
 import type { FplBootstrap, FplElement, FplFixture } from '../fpl/models.js';
 import type {
+  FixtureInputs,
   FixtureProjection,
   PlayerProjection,
   PointsBreakdown,
@@ -30,6 +31,7 @@ type ProjectionsSnapshot = Omit<ProjectionsResponse, 'cache'>;
 const num = (value: string | null): number => Number.parseFloat(value ?? '') || 0;
 // `+ 0` turns −0 into 0, so a JSON round trip (the cache) gives the same value.
 const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
+const round3 = (value: number): number => Math.round(value * 1000) / 1000 + 0;
 const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD'];
 
 /** The next `count` gameweeks, starting with the one after the current. */
@@ -85,6 +87,12 @@ function roundBreakdown(b: PointsBreakdown): PointsBreakdown {
   return Object.fromEntries(Object.entries(b).map(([k, v]) => [k, round2(v)])) as unknown as PointsBreakdown;
 }
 
+function roundInputs(inputs: FixtureInputs): FixtureInputs {
+  return Object.fromEntries(
+    Object.entries(inputs).map(([k, v]) => [k, typeof v === 'number' ? round3(v) : v]),
+  ) as unknown as FixtureInputs;
+}
+
 interface ProjectionInputs {
   bootstrap: FplBootstrap;
   fixtures: FplFixture[];
@@ -94,10 +102,7 @@ interface ProjectionInputs {
 }
 
 /** Projections for every player in the game, by element id. */
-function projectAll(
-  inputs: ProjectionInputs,
-  pickPositions: Map<number, number>,
-): Map<number, PlayerProjection> {
+function projectAll(inputs: ProjectionInputs, pickPositions: Map<number, number>): Map<number, PlayerProjection> {
   const { bootstrap, fixtures, gameweeks, priorSeason, headToHead } = inputs;
   const clubTotals = clubTotalsThisSeason(bootstrap, fixtures);
   const league: League = clubStrengths(clubTotals);
@@ -159,6 +164,7 @@ function projectAll(
           expectedGoals: round2(estimate.expectedGoals),
           expectedAssists: round2(estimate.expectedAssists),
           headToHeadFactor: round2(h2h),
+          inputs: roundInputs(estimate.inputs),
         };
       });
       return {

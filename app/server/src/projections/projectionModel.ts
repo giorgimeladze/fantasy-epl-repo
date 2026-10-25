@@ -1,7 +1,7 @@
 // Pure predicted-points model (spec 003). No I/O: projectionService feeds it live FPL data and
 // backtest feeds it past seasons, so both are scored by exactly the same rules.
 import type { OpponentRecord } from '../history/fixtureHistoryRepository.js';
-import type { PointsBreakdown } from './models.js';
+import type { FixtureInputs, PointsBreakdown } from './models.js';
 import type { Position } from '../team/models.js';
 
 // FPL 2025-26 scoring rules.
@@ -135,6 +135,7 @@ export interface FixtureEstimate {
   cleanSheetChance: number;
   expectedGoals: number;
   expectedAssists: number;
+  inputs: FixtureInputs;
 }
 
 const AVERAGE_CLUB: ClubStrength = { attack: 1, defence: 1 };
@@ -251,15 +252,18 @@ export function projectFixture(
   const goalsAgainst = (league.goalsPerMatch * fixture.opponent.attack * fixture.club.defence) / venueFor;
   const cleanSheetChance = Math.exp(-goalsAgainst);
 
-  const expectedGoals =
-    rate((s) => s.expectedGoals, 'expectedGoals') * share90 * attackFactor * fixture.headToHeadFactor;
-  const expectedAssists =
-    rate((s) => s.expectedAssists, 'expectedAssists') * share90 * attackFactor * fixture.headToHeadFactor;
+  const goalsPer90 = rate((s) => s.expectedGoals, 'expectedGoals');
+  const assistsPer90 = rate((s) => s.expectedAssists, 'expectedAssists');
+  const bonusPer90 = rate((s) => s.bonus, 'bonus');
+  const cardPointsPer90 = rate((s) => s.yellowCards, 'yellowCards') + 3 * rate((s) => s.redCards, 'redCards');
+  const expectedGoals = goalsPer90 * share90 * attackFactor * fixture.headToHeadFactor;
+  const expectedAssists = assistsPer90 * share90 * attackFactor * fixture.headToHeadFactor;
 
   const defensive = position === 'GK' || position === 'DEF';
   const threshold = DEFENSIVE_CONTRIBUTION_THRESHOLD[position];
   const savesPerMatch = (rate((s) => s.saves, 'saves') * perStart * fixture.opponent.attack) / 90 / venueFor;
   const actionsPerMatch = (rate((s) => s.defensiveContribution, 'defensiveContribution') * perStart) / 90;
+  const defensiveChance = threshold === null ? 0 : chanceAtLeast(actionsPerMatch, threshold);
 
   const breakdown: PointsBreakdown = {
     appearance: startChance + subChance + sixtyChance,
@@ -268,10 +272,9 @@ export function projectFixture(
     cleanSheet: sixtyChance * cleanSheetChance * CLEAN_SHEET_POINTS[position],
     goalsConceded: defensive ? -sixtyChance * expectedPerEvery(goalsAgainst, 2) : 0,
     saves: position === 'GK' ? startChance * expectedPerEvery(savesPerMatch, 3) : 0,
-    bonus: rate((s) => s.bonus, 'bonus') * share90 * fixture.headToHeadFactor,
-    defensiveContribution:
-      threshold === null ? 0 : startChance * chanceAtLeast(actionsPerMatch, threshold) * DEFENSIVE_CONTRIBUTION_POINTS,
-    cards: -(rate((s) => s.yellowCards, 'yellowCards') + 3 * rate((s) => s.redCards, 'redCards')) * share90,
+    bonus: bonusPer90 * share90 * fixture.headToHeadFactor,
+    defensiveContribution: startChance * defensiveChance * DEFENSIVE_CONTRIBUTION_POINTS,
+    cards: -cardPointsPer90 * share90,
   };
 
   return {
@@ -283,6 +286,31 @@ export function projectFixture(
     cleanSheetChance,
     expectedGoals,
     expectedAssists,
+    inputs: {
+      availability,
+      startShare: share,
+      minutesPerStart: perStart,
+      subChance,
+      subMinutes: SUB_MINUTES,
+      sixtyMinuteChance: sixtyChance,
+      goalsPer90,
+      assistsPer90,
+      bonusPer90,
+      cardPointsPer90,
+      opponentDefence: fixture.opponent.defence,
+      opponentAttack: fixture.opponent.attack,
+      clubDefence: fixture.club.defence,
+      venueFactor: venueFor,
+      leagueGoalsPerMatch: league.goalsPerMatch,
+      expectedGoalsAgainst: goalsAgainst,
+      savesPerMatch: position === 'GK' ? savesPerMatch : 0,
+      defensiveActionsPerMatch: actionsPerMatch,
+      defensiveThreshold: threshold,
+      defensiveContributionChance: defensiveChance,
+      goalPoints: GOAL_POINTS[position],
+      assistPoints: ASSIST_POINTS,
+      cleanSheetPoints: CLEAN_SHEET_POINTS[position],
+    },
   };
 }
 
