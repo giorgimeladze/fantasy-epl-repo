@@ -10,5 +10,5 @@ projectionRoutes.use(requireAuth);
 
 // Predicted points for the next gameweeks (squad + top players per position), cached for 30 minutes.
 projectionRoutes.get('/', async (req, res) => {
-  res.json(await projectionService.getProjections(undefined, forceRefresh(req)));
+  res.json(await projectionService.getProjections(forceRefresh(req)));
 });

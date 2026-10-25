@@ -1,15 +1,13 @@
 import { config } from '../config/index.js';
-import { cachedResponse } from '../db/responseCache.js';
+import { cachedEndpoint } from '../db/responseCache.js';
 import type { FplBootstrap, FplElement, FplPick } from '../fpl/models.js';
-import type { MyTeamResponse, PlayerView, TeamSnapshot, UpcomingFixture } from './models.js';
+import type { PlayerView, TeamSnapshot, UpcomingFixture } from './models.js';
 import { HttpError } from '../utils/http.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
 import { fplClient } from '../fpl/fplClient.js';
 import { positionOf, upcomingFixturesByTeam } from '../fpl/fplMappers.js';
+import { decimal, tenths } from '../shared/numbers.js';
 import { type GameweekData, pointsContributed } from './pointsCalculator.js';
-
-const tenths = (value: number): number => value / 10;
-const num = (value: string): number => Number.parseFloat(value) || 0;
 
 function range(from: number, to: number): number[] {
   return Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
@@ -37,22 +35,22 @@ function toPlayerView(
     multiplier: pick.multiplier,
 
     price: tenths(element.now_cost),
-    form: num(element.form),
-    pointsPerGame: num(element.points_per_game),
+    form: decimal(element.form),
+    pointsPerGame: decimal(element.points_per_game),
     totalPoints: element.total_points,
     minutes: element.minutes,
     goals: element.goals_scored,
     assists: element.assists,
     cleanSheets: element.clean_sheets,
     bonus: element.bonus,
-    ictIndex: num(element.ict_index),
-    expectedGoals: num(element.expected_goals),
-    expectedAssists: num(element.expected_assists),
-    selectedByPercent: num(element.selected_by_percent),
+    ictIndex: decimal(element.ict_index),
+    expectedGoals: decimal(element.expected_goals),
+    expectedAssists: decimal(element.expected_assists),
+    selectedByPercent: decimal(element.selected_by_percent),
 
     gameweekPoints: extras.gameweekPoints,
     pointsForMe: extras.pointsForMe,
-    fplExpectedPoints: num(element.ep_next ?? ''),
+    fplExpectedPoints: decimal(element.ep_next),
 
     status: element.status,
     news: element.news,
@@ -63,6 +61,7 @@ function toPlayerView(
 }
 
 async function fetchSnapshot(teamId: number): Promise<TeamSnapshot> {
+  if (!teamId) throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env.');
   const [bootstrap, entry, fixtures] = await Promise.all([
     fplClient.getBootstrap(),
     fplClient.getEntry(teamId),
@@ -138,11 +137,5 @@ async function fetchSnapshot(teamId: number): Promise<TeamSnapshot> {
 
 export const teamService = {
   /** The manager's squad, summary and current gameweek. Cached in SQLite for config.db.cacheTtlMs. */
-  async getMyTeam(
-    teamId: number = config.fpl.teamId,
-    { forceRefresh = false }: { forceRefresh?: boolean } = {},
-  ): Promise<MyTeamResponse> {
-    if (!teamId) throw new HttpError(500, 'FPL_TEAM_ID is not configured. Set it in .env.');
-    return cachedResponse(`team:${teamId}`, config.db.cacheTtlMs, forceRefresh, () => fetchSnapshot(teamId));
-  },
+  getMyTeam: cachedEndpoint<TeamSnapshot>('team', (teamId) => fetchSnapshot(teamId)),
 };

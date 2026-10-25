@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { authService } from './authService.js';
 import type { LoginRequest } from './models.js';
+import { HttpError } from '../utils/http.js';
 import { requireAuth } from './requireAuth.js';
 
 export const authRoutes = Router();
@@ -9,15 +10,11 @@ export const authRoutes = Router();
 authRoutes.post('/login', (req, res) => {
   const { username, password } = (req.body ?? {}) as Partial<LoginRequest>;
   if (typeof username !== 'string' || typeof password !== 'string') {
-    res.status(400).json({ error: 'username and password are required' });
-    return;
+    throw new HttpError(400, 'username and password are required');
   }
 
   const result = authService.login(username, password);
-  if (!result) {
-    res.status(401).json({ error: 'Invalid username or password' });
-    return;
-  }
+  if (!result) throw new HttpError(401, 'Invalid username or password');
   res.json(result);
 });
 

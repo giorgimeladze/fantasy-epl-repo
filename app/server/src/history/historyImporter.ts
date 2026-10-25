@@ -2,7 +2,7 @@ import { config } from '../config/index.js';
 import { fixtureHistoryRepository } from './fixtureHistoryRepository.js';
 import type { FplBootstrap } from '../fpl/models.js';
 import type { FixtureRecord } from '../headToHead/models.js';
-import type { Position } from '../team/models.js';
+import { positionFromCode } from '../shared/positions.js';
 import { parseCsv } from '../utils/csv.js';
 import { HttpError } from '../utils/http.js';
 
@@ -42,9 +42,6 @@ const nullableInt = (value: string | undefined): number | null =>
 const nullableFloat = (value: string | undefined): number | null =>
   value === undefined || value === '' ? null : Number.parseFloat(value);
 
-// merged_gw.csv also has "AM" (assistant manager) rows in 2024-25; those are skipped.
-const POSITIONS: Record<string, Position> = { GK: 'GK', GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
-
 /** Turns one season's CSV files (merged_gw, players_raw, teams) into fixture records. */
 function buildSeasonRecords(
   season: string,
@@ -62,8 +59,9 @@ function buildSeasonRecords(
     const playerCode = playerCodeById.get(int(row.element));
     const opponent = teamById.get(int(row.opponent_team));
     if (!playerCode || !opponent) continue;
-    const position = row.position ? POSITIONS[row.position] : null;
-    if (position === undefined) continue;
+    // merged_gw.csv also has "AM" (assistant manager) rows in 2024-25; those are skipped.
+    const position = positionFromCode(row.position);
+    if (row.position && !position) continue;
 
     records.push({
       season,

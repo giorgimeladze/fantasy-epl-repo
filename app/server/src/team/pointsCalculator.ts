@@ -23,8 +23,8 @@ export function effectiveMultipliers(
   const vice = picks.picks.find((p) => p.is_vice_captain);
   if (captain && vice && captain.multiplier > 1) {
     const captainDidNotPlay =
-      multipliers.get(captain.element) === 0 ||
-      (gameweekFinished && (minutesById.get(captain.element) ?? 0) === 0);
+      multipliers.get(captain.element) === 0
+      || (gameweekFinished && (minutesById.get(captain.element) ?? 0) === 0);
     const vicePlays = (multipliers.get(vice.element) ?? 0) > 0;
     if (captainDidNotPlay && vicePlays) {
       multipliers.set(captain.element, Math.min(multipliers.get(captain.element) ?? 0, 1));

@@ -1,12 +1,12 @@
 import { config } from '../config/index.js';
-import { cachedResponse } from '../db/responseCache.js';
+import { cachedEndpoint } from '../db/responseCache.js';
 import { fplClient } from '../fpl/fplClient.js';
-import type { FplBootstrap } from '../fpl/models.js';
 import type { PlayerProjection } from '../projections/models.js';
 import { projectionService } from '../projections/projectionService.js';
-import type { Position } from '../team/models.js';
+import { noGameweeksLeft } from '../shared/decision/decisionContext.js';
+import { round2 } from '../shared/numbers.js';
+import { byPosition } from '../shared/positions.js';
 import { teamService } from '../team/teamService.js';
-import { HttpError } from '../utils/http.js';
 import {
   bestCaptaincy,
   bestLineup,
@@ -17,23 +17,12 @@ import {
   formationOf,
   type Lineup,
   lineupChanges,
-} from './lineupOptimizer.js';
-import type {
-  CaptainOption,
-  LineupChoice,
-  LineupPlayer,
-  NextGameweekResponse,
-  PriceHint,
-  PriceWatch,
-} from './models.js';
-import { hasPriceData, priceOutlook } from './priceWatch.js';
+} from '../shared/lineupOptimizer.js';
+import type { CaptainOption, LineupChoice, LineupPlayer, NextGameweekResponse } from './models.js';
+import { priceWatch } from './priceWatch.js';
 import { lineupReasons } from './reasons.js';
 
 type NextGameweekSnapshot = Omit<NextGameweekResponse, 'cache'>;
-
-// `+ 0` turns −0 into 0, so a JSON round trip (the cache) gives the same value.
-const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
-const POSITION_ORDER: Record<Position, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
 function toLineupPlayer(p: PlayerProjection): LineupPlayer {
   const gw = p.gameweeks[0];
@@ -55,7 +44,7 @@ function choice(lineup: Lineup, players: Map<number, LineupPlayer>, candidates: 
   const evaluation = evaluate(lineup, candidates);
   const starters = lineup.starters
     .map((id) => players.get(id)!)
-    .sort((a, b) => POSITION_ORDER[a.position] - POSITION_ORDER[b.position] || b.points - a.points);
+    .sort((a, b) => byPosition(a, b) || b.points - a.points);
   return {
     formation: formationOf(lineup.starters.map((id) => candidates.get(id)!)),
     starters,
@@ -68,55 +57,13 @@ function choice(lineup: Lineup, players: Map<number, LineupPlayer>, candidates: 
   };
 }
 
-function priceWatch(bootstrap: FplBootstrap, squadIds: Set<number>): PriceWatch {
-  if (!hasPriceData(bootstrap.elements)) return { available: false, squad: [], risers: [], fallers: [] };
-
-  const clubs = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
-  const positions = new Map(bootstrap.element_types.map((t) => [t.id, t.singular_name_short]));
-  const now = Date.now();
-  const hints: PriceHint[] = bootstrap.elements.flatMap((e) => {
-    const outlook = priceOutlook(e, now);
-    if (!outlook) return [];
-    const short = positions.get(e.element_type);
-    return [
-      {
-        id: e.id,
-        webName: e.web_name,
-        position: (short === 'GKP' ? 'GK' : short) as Position,
-        clubShortName: clubs.get(e.team) ?? '?',
-        price: e.now_cost / 10,
-        ...outlook,
-        netTransfers: e.transfers_in_event - e.transfers_out_event,
-        changeThisGameweek: e.cost_change_event / 10,
-        inSquad: squadIds.has(e.id),
-      },
-    ];
-  });
-
-  // Soonest first, then furthest along.
-  const order = (a: PriceHint, b: PriceHint) =>
-    a.updatesAway - b.updatesAway || Math.abs(b.progressPercent) - Math.abs(a.progressPercent);
-  const league = (direction: PriceHint['direction']) =>
-    hints
-      .filter((h) => h.direction === direction && h.chance === 'likely')
-      .sort(order)
-      .slice(0, config.nextGameweek.priceWatchPerList);
-
-  return {
-    available: true,
-    squad: hints.filter((h) => h.inSquad).sort(order),
-    risers: league('rise'),
-    fallers: league('fall'),
-  };
-}
-
 async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<NextGameweekSnapshot> {
   // Projections first: they refresh the team too, so the team call below is answered from the cache.
-  const projections = await projectionService.getProjections(teamId, { forceRefresh });
-  const [team, bootstrap] = await Promise.all([teamService.getMyTeam(teamId), fplClient.getBootstrap()]);
+  const projections = await projectionService.getProjections({ teamId, forceRefresh });
+  const [team, bootstrap] = await Promise.all([teamService.getMyTeam({ teamId }), fplClient.getBootstrap()]);
 
   const gameweek = projections.gameweeks[0];
-  if (gameweek === undefined) throw new HttpError(404, 'There are no gameweeks left to plan this season.');
+  if (gameweek === undefined) throw noGameweeksLeft();
 
   const players = new Map(projections.squad.map((p) => [p.id, toLineupPlayer(p)]));
   const candidates = new Map<number, Candidate>(
@@ -173,7 +120,7 @@ async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<Nex
     benchOrderChanged: current.bench.join() !== best.lineup.bench.join(),
     captainOptions,
     formations: best.formations.map((f) => ({ ...f, expectedPoints: round2(f.expectedPoints) })),
-    priceWatch: priceWatch(bootstrap, new Set(candidates.keys())),
+    priceWatch: priceWatch(bootstrap, new Set(candidates.keys()), Date.now(), config.nextGameweek.priceWatchPerList),
     differentials: projections.differentials,
   };
 }
@@ -183,12 +130,5 @@ export const nextGameweekService = {
    * The best XI, bench order and captain for the next gameweek, compared with the current lineup,
    * plus price-change hints and differentials. Cached in SQLite for config.db.cacheTtlMs.
    */
-  getNextGameweek(
-    teamId: number = config.fpl.teamId,
-    { forceRefresh = false }: { forceRefresh?: boolean } = {},
-  ): Promise<NextGameweekResponse> {
-    return cachedResponse(`next-gameweek:${teamId}`, config.db.cacheTtlMs, forceRefresh, () =>
-      buildSnapshot(teamId, forceRefresh),
-    );
-  },
+  getNextGameweek: cachedEndpoint<NextGameweekSnapshot>('next-gameweek', buildSnapshot),
 };

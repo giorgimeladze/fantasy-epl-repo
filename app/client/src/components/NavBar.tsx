@@ -1,16 +1,7 @@
-import { ROUTES, type Route } from '../hooks/useHashRoute.ts';
-
-const LINKS: Array<{ route: Route; label: string }> = [
-  { route: 'team', label: 'My team' },
-  { route: 'next-gameweek', label: 'Next GW' },
-  { route: 'transfers', label: 'Transfers' },
-  { route: 'planner', label: 'Planner' },
-  { route: 'predictions', label: 'Predictions' },
-  { route: 'head-to-head', label: 'Head-to-head' },
-];
+import { type PageRoute, ROUTES } from '../routes.ts';
 
 interface Props {
-  active: Route;
+  active: PageRoute;
   onLogout: () => void;
 }
 
@@ -19,14 +10,14 @@ export function NavBar({ active, onLogout }: Props) {
     <header className="topbar">
       <span className="brand">⚽ My FPL Team</span>
       <nav className="nav" aria-label="Main">
-        {LINKS.map(({ route, label }) => (
+        {ROUTES.map((route) => (
           <a
-            key={route}
-            href={ROUTES[route]}
+            key={route.hash}
+            href={route.hash}
             className={route === active ? 'nav-link active' : 'nav-link'}
             aria-current={route === active ? 'page' : undefined}
           >
-            {label}
+            {route.label}
           </a>
         ))}
       </nav>

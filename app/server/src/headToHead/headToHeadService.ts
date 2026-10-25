@@ -8,23 +8,20 @@ import type {
   PlayerHeadToHeadResponse,
   ScoutOptionsResponse,
 } from './models.js';
-import type { Position, UpcomingFixture } from '../team/models.js';
+import type { UpcomingFixture } from '../team/models.js';
 import { HttpError } from '../utils/http.js';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
-import { cachedResponse } from '../db/responseCache.js';
+import { cachedEndpoint, cachedResponse } from '../db/responseCache.js';
 import { fplClient } from '../fpl/fplClient.js';
 import { positionOf, upcomingFixturesByTeam } from '../fpl/fplMappers.js';
+import { decimalOrNull } from '../shared/numbers.js';
+import { byPosition } from '../shared/positions.js';
 import { summarize, toMatch } from './headToHeadInsights.js';
 import { currentSeasonStartYear, historyImporter, previousSeasons, seasonLabel } from '../history/historyImporter.js';
 import { teamService } from '../team/teamService.js';
 
 type HeadToHeadSnapshot = Omit<HeadToHeadResponse, 'cache'>;
 type PlayerSnapshot = Omit<PlayerHeadToHeadResponse, 'cache'>;
-
-const num = (value: string): number | null => {
-  const n = Number.parseFloat(value);
-  return Number.isNaN(n) ? null : n;
-};
 
 function fromElementHistory(
   h: FplElementHistory,
@@ -59,8 +56,8 @@ function fromElementHistory(
     bonus: h.bonus,
     bps: h.bps,
     totalPoints: h.total_points,
-    expectedGoals: num(h.expected_goals),
-    expectedAssists: num(h.expected_assists),
+    expectedGoals: decimalOrNull(h.expected_goals),
+    expectedAssists: decimalOrNull(h.expected_assists),
     defensiveContribution: h.defensive_contribution ?? null,
     position: null,
     starts: null,
@@ -123,7 +120,7 @@ async function analysePlayer(
 
 async function buildSquadSnapshot(teamId: number, forceRefresh: boolean): Promise<HeadToHeadSnapshot> {
   const [team, bootstrap] = await Promise.all([
-    teamService.getMyTeam(teamId, { forceRefresh }),
+    teamService.getMyTeam({ teamId, forceRefresh }),
     fplClient.getBootstrap(),
   ]);
   const ctx = await loadContext(bootstrap);
@@ -175,14 +172,7 @@ export const headToHeadService = {
    * across this season (live FPL) and previous seasons (SQLite history).
    * Cached in SQLite for config.db.cacheTtlMs.
    */
-  getHeadToHead(
-    teamId: number = config.fpl.teamId,
-    { forceRefresh = false }: { forceRefresh?: boolean } = {},
-  ): Promise<HeadToHeadResponse> {
-    return cachedResponse(`head-to-head:${teamId}`, config.db.cacheTtlMs, forceRefresh, () =>
-      buildSquadSnapshot(teamId, forceRefresh),
-    );
-  },
+  getHeadToHead: cachedEndpoint<HeadToHeadSnapshot>('head-to-head', buildSquadSnapshot),
 
   /** The same analysis for any Premier League player (the scout picker). */
   getPlayerHeadToHead(
@@ -197,7 +187,6 @@ export const headToHeadService = {
   /** Clubs and their players, for choosing who to scout. */
   async getScoutOptions(): Promise<ScoutOptionsResponse> {
     const bootstrap = await fplClient.getBootstrap();
-    const order: Record<Position, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
 
     const clubs = bootstrap.teams
       .map((team) => ({
@@ -212,7 +201,7 @@ export const headToHeadService = {
             fullName: `${e.first_name} ${e.second_name}`,
             position: positionOf(e, bootstrap),
           }))
-          .sort((a, b) => order[a.position] - order[b.position] || a.webName.localeCompare(b.webName)),
+          .sort((a, b) => byPosition(a, b) || a.webName.localeCompare(b.webName)),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 

@@ -2,6 +2,8 @@
 // before each gameweek. Pure: the caller loads the records (see src/scripts/backtest.ts).
 import type { HeadToHeadAverages } from '../history/fixtureHistoryRepository.js';
 import type { FixtureRecord } from '../headToHead/models.js';
+import { round2 } from '../shared/numbers.js';
+import { POSITIONS } from '../shared/positions.js';
 import type { Position } from '../team/models.js';
 import {
   type ClubTotals,
@@ -65,9 +67,6 @@ interface PlayerState extends PlayerSample {
   points: number;
   lastPlayedGw: number;
 }
-
-const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD'];
-const round2 = (value: number): number => Math.round(value * 100) / 100;
 
 function emptySample(): PlayerState {
   return {

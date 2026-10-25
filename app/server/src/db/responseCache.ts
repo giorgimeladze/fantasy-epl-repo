@@ -1,6 +1,13 @@
 // SQLite cache for assembled API responses (key → JSON), used by every data endpoint.
+import { config } from '../config/index.js';
 import type { CacheInfo } from '../team/models.js';
 import { getDatabase } from './database.js';
+
+/** What every team endpoint accepts: the team (default `config.fpl.teamId`) and `?refresh=true`. */
+export interface FetchOptions {
+  teamId?: number;
+  forceRefresh?: boolean;
+}
 
 function cacheInfo(fromCache: boolean, fetchedAt: number, ttl: number): CacheInfo {
   return {
@@ -26,6 +33,18 @@ export async function cachedResponse<T extends object>(
   const fetchedAt = Date.now();
   responseCache.save(key, payload, fetchedAt);
   return { ...payload, cache: cacheInfo(false, fetchedAt, ttl) };
+}
+
+/**
+ * A team endpoint served from the response cache under `<name>:<teamId>` for `config.db.cacheTtlMs`.
+ * `build` gets `forceRefresh` too, so it can pass it on to the services it calls.
+ */
+export function cachedEndpoint<T extends object>(
+  name: string,
+  build: (teamId: number, forceRefresh: boolean) => Promise<T>,
+): (options?: FetchOptions) => Promise<T & { cache: CacheInfo }> {
+  return ({ teamId = config.fpl.teamId, forceRefresh = false } = {}) =>
+    cachedResponse(`${name}:${teamId}`, config.db.cacheTtlMs, forceRefresh, () => build(teamId, forceRefresh));
 }
 
 export const responseCache = {

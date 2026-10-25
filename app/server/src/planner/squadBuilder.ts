@@ -2,7 +2,7 @@
 // No solver: starting from the manager's squad, it keeps making the best free transfer (or pair,
 // when no single one helps) until nothing adds points. That respects the budget, positions and the
 // club limit at every step, and lands on a squad no 1- or 2-transfer change can improve.
-import { candidatePool, searchTransfers, type SquadPlayer } from '../transfers/transferSearch.js';
+import { candidatePool, searchTransfers, type SquadPlayer } from '../shared/decision/transferSearch.js';
 
 export interface SquadSearchOptions {
   maxPerClub: number;

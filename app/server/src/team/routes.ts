@@ -10,5 +10,5 @@ teamRoutes.use(requireAuth);
 
 // The manager's squad and summary, cached for 30 minutes.
 teamRoutes.get('/', async (req, res) => {
-  res.json(await teamService.getMyTeam(undefined, forceRefresh(req)));
+  res.json(await teamService.getMyTeam(forceRefresh(req)));
 });

@@ -1,8 +1,8 @@
 // Pure: plays a queue of planned transfers forward over the horizon, gameweek by gameweek, with
 // the same rules as the Transfers page: like for like, budget, 3 per club, free transfers banked
 // up to 5 and −4 for each one beyond them. A move that breaks a rule is reported and skipped.
-import { freeTransfersAfter } from '../transfers/freeTransfers.js';
-import type { SquadPlayer } from '../transfers/transferSearch.js';
+import { freeTransfersAfter } from '../shared/decision/freeTransfers.js';
+import type { SquadPlayer } from '../shared/decision/transferSearch.js';
 import type { PlannedTransfer } from './models.js';
 
 export interface DraftRules {
@@ -67,9 +67,9 @@ export function simulateDraft(
         continue;
       }
       if (incoming.position !== out.position) {
-        problem(
-          `${nameOf(out.id)} (${out.position}) can only be replaced by a ${out.position}, not ${nameOf(incoming.id)} (${incoming.position})`,
-        );
+        const [outName, inName] = [nameOf(out.id), nameOf(incoming.id)];
+        const position = out.position;
+        problem(`${outName} (${position}) can only be replaced by a ${position}, not ${inName} (${incoming.position})`);
         continue;
       }
       const after = bank + out.price - incoming.price;

@@ -1,7 +1,7 @@
 // Pure: which chips are left, and what Bench Boost and Triple Captain would add each gameweek.
 // Free Hit and Wildcard need a squad search (squadBuilder.ts); plannerService puts them together.
 import type { FplChip, FplChipPlay } from '../fpl/models.js';
-import { bestLineup, type Candidate } from '../nextGameweek/lineupOptimizer.js';
+import { bestLineup, type Candidate } from '../shared/lineupOptimizer.js';
 import type { ChipName, ChipStatus } from './models.js';
 
 export const CHIP_LABELS: Record<ChipName, string> = {

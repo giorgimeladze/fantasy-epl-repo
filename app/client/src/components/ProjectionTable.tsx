@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import type { FixtureProjection, GameweekProjection, PlayerProjection, PointsBreakdown } from '../types.ts';
+import { fixed, pct, pts } from '../lib/format.ts';
 import { FixtureChip } from './FixtureChip.tsx';
 import { FixtureExplanation } from './FixtureExplanation.tsx';
 
@@ -14,9 +15,6 @@ const BREAKDOWN_ROWS: Array<{ key: keyof PointsBreakdown; label: string }> = [
   { key: 'defensiveContribution', label: 'Defensive contribution' },
   { key: 'cards', label: 'Cards' },
 ];
-
-const pts = (value: number) => value.toFixed(1);
-const pct = (value: number) => `${Math.round(value * 100)}%`;
 
 function heat(points: number): string {
   if (points >= 6) return 'xp-high';
@@ -104,10 +102,10 @@ function Breakdown({ player }: { player: PlayerProjection }) {
                 <td key={`${gameweek}-${fixture.opponent}`} className="num">
                   {fixture.expectedMinutes}′ · starts {pct(fixture.startChance)}
                   <br />
-                  xG {fixture.expectedGoals.toFixed(2)} · xA {fixture.expectedAssists.toFixed(2)}
+                  xG {fixed(fixture.expectedGoals)} · xA {fixed(fixture.expectedAssists)}
                   <br />
                   CS {pct(fixture.cleanSheetChance)}
-                  {fixture.headToHeadFactor !== 1 && ` · H2H ×${fixture.headToHeadFactor.toFixed(2)}`}
+                  {fixture.headToHeadFactor !== 1 && ` · H2H ×${fixed(fixture.headToHeadFactor)}`}
                 </td>
               ))}
             </tr>
@@ -191,8 +189,8 @@ export function ProjectionTable({ players, gameweeks, markSquad = false, showOwn
                       {p.news && <span className="news">{p.news}</span>}
                     </div>
                   </td>
-                  <td className="num">{p.price.toFixed(1)}</td>
-                  {showOwnership && <td className="num">{p.selectedByPercent.toFixed(1)}</td>}
+                  <td className="num">{pts(p.price)}</td>
+                  {showOwnership && <td className="num">{pts(p.selectedByPercent)}</td>}
                   <td className="num">{p.fplExpectedPoints === null ? '–' : pts(p.fplExpectedPoints)}</td>
                   {p.gameweeks.map((gw) => (
                     <GameweekCell key={gw.gameweek} gw={gw} />

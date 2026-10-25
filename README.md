@@ -99,7 +99,7 @@ npm test                         # all server tests
 npm run test:watch -w app/server     # re-run on change
 ```
 
-How to write a new test: [app/server/src/docs/writing-tests.md](app/server/src/docs/writing-tests.md).
+How to write a new test: [.claude/skills/writing-tests/SKILL.md](.claude/skills/writing-tests/SKILL.md).
 
 All tests are end to end. [`test/setup.ts`](app/server/test/setup.ts) starts the mock server, logs in once and resets the caches before each test, so a spec only imports what it uses (`import { api, fplCalls } from './setup.js'`) and calls endpoints like `api.team()`.
 
@@ -126,6 +126,8 @@ The past-season mocks (also in `test/mockServer.ts`) cover 2023-24 to 2025-26; 2
 | `npm start` | Runs the built server, which also serves the built client |
 | `npm test` | Mocha test suite (server) |
 | `npm run typecheck` | Type-checks server, tests and client |
+| `npm run lint` / `npm run lint:fix` | ESLint (also the formatter) on both workspaces; `lint:fix` rewrites the files |
+| `npm run check` | Lint, typecheck and tests in one go: run before every commit |
 | `npm run backtest [-- 2024-25]` | Scores the predicted-points model against a past season (default: the latest one in SQLite) and compares it with FPL's own forecast |
 
 ## API
@@ -162,7 +164,8 @@ The past-season mocks (also in `test/mockServer.ts`) cover 2023-24 to 2025-26; 2
 
 ## Docs
 
-- [AGENTS.md](AGENTS.md): conventions for AI coding agents (also loaded via `CLAUDE.md`)
+- [AGENTS.md](AGENTS.md): conventions for AI coding agents (also loaded via `CLAUDE.md`), and the `CLAUDE.md` in each source folder
+- [.claude/skills/](.claude/skills/): how-to guides for common tasks (new endpoint, page, component, tests, config, migrations, model changes, specs)
 - [CONTEXT.md](CONTEXT.md): FPL domain notes, the FPL API endpoints used, how the points and caching work
 - [docs/specs/](docs/specs/): one spec per major update, covering requirements, what is done and what is still open
 - [docs/tasks/](docs/tasks/): backlog and research notes, e.g. the [recommendations roadmap](docs/tasks/recommendations-roadmap.md)

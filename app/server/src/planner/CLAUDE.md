@@ -1,9 +1,11 @@
 # planner/
 
-`/api/planner` (chip timing + rotation pairs, cached under `planner:<id>`) and `/api/planner/draft` (GET/PUT/DELETE: the manager's one draft plan, stored in the `draft_plan` table, never response-cached). Both start from `transfers/transferContext.ts` (projections, squad at selling prices, bank, free transfers).
+`/api/planner` (chip timing + rotation pairs, cached under `planner:<id>`) and `/api/planner/draft` (GET/PUT/DELETE: the manager's one draft plan in the `draft_plan` table, never response-cached). Both start from `shared/decision/decisionContext.ts`.
 
-- `chips.ts` — pure: chip availability from `bootstrap-static` `chips` windows (once per season if missing) + chips played; Bench Boost (bench − expected autosubs) and Triple Captain (the armband once more) per gameweek via `nextGameweek/lineupOptimizer.ts`.
-- `squadBuilder.ts` — pure: Free Hit / Wildcard squads by repeated best free transfers (singles, then pairs) with `transfers/transferSearch.ts`, until nothing adds points.
-- `rotation.ts` — pure: every club pair, scored as the weekly maximum; each club must start `rotationMinStarts` weeks.
-- `draftPlan.ts` — pure: replays planned transfers week by week (rules as on the Transfers page) and reports the moves that break one.
-- `draftRepository.ts` — SQLite storage for the plan. `plannerService.ts` assembles both responses; PUT rejects (400) a plan with any broken move, GET drops them with a warning.
+- `plannerService.ts` — `/api/planner`: `chipAdvice` + `rotationAdvice`.
+- `chipAdvice.ts` — each chip's value per gameweek, best week and verdict (Wildcard vs the best transfers, Free Hit, Bench Boost, Triple Captain).
+- `rotationAdvice.ts` — goalkeeper pairs (first-choice keepers within `goalkeeperPairMaxPrice`) and defence pairs (expected clean sheets).
+- `draftService.ts` — `/api/planner/draft`: replays the plan, adds a suggested next move per week and the market; PUT rejects (400) a plan with any broken move, GET drops them with a warning.
+- `mappers.ts` — response views (`plannerPlayer`, `marketPlayer`, `lineupOf`) and `pts` for verdict text.
+- Pure: `chips.ts` (availability from bootstrap `chips` windows + chips played; Bench Boost / Triple Captain values), `squadBuilder.ts` (Free Hit / Wildcard squads by repeated best transfers), `rotation.ts` (every club pair, weekly maximum, `rotationMinStarts`), `draftPlan.ts` (replays planned transfers with the Transfers page's rules, reports broken moves).
+- `draftRepository.ts` — SQLite storage for the plan.

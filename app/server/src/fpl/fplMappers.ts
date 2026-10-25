@@ -1,12 +1,11 @@
 import { config } from '../config/index.js';
 import type { FplBootstrap, FplElement, FplFixture } from './models.js';
+import { positionFromCode } from '../shared/positions.js';
 import type { Position, UpcomingFixture } from '../team/models.js';
-
-const POSITIONS: Record<string, Position> = { GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD' };
 
 export function positionOf(element: FplElement, bootstrap: FplBootstrap): Position {
   const type = bootstrap.element_types.find((t) => t.id === element.element_type);
-  return POSITIONS[type?.singular_name_short ?? ''] ?? 'MID';
+  return positionFromCode(type?.singular_name_short) ?? 'MID';
 }
 
 /** Next `config.fpl.upcomingFixturesCount` scheduled fixtures per club (by FPL team id). */

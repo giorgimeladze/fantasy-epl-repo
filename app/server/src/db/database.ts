@@ -62,9 +62,9 @@ const MIGRATIONS: string[] = [
    DELETE FROM team_cache;
    DELETE FROM response_cache`,
   // The team snapshot moved into response_cache (key "team:<id>").
-  `DROP TABLE team_cache`,
+  'DROP TABLE team_cache',
   // Spec 004: projections gained playChance, selectedByPercent and differentials.
-  `DELETE FROM response_cache`,
+  'DELETE FROM response_cache',
   // Spec 006: the manager's one draft transfer plan; projections gained the model's inputs per fixture.
   `CREATE TABLE draft_plan (
      team_id    INTEGER PRIMARY KEY,

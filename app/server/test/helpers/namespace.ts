@@ -4,7 +4,14 @@ import request, { type Test } from 'supertest';
 import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/index.js';
 
-const app = createApp();
+// Listening on 127.0.0.1 explicitly. supertest's default (a random port on every interface) can be handed a port
+// number that another local process already holds on 127.0.0.1, which then answers the test's requests instead.
+const app = createApp().listen(0, '127.0.0.1');
+
+/** Stops the app's test server (setup.ts calls it after all specs). */
+export function closeApp(): Promise<void> {
+  return new Promise((resolve, reject) => app.close((err) => (err ? reject(err) : resolve())));
+}
 
 /** Logs in as the admin (the only user) and returns the session token. */
 export async function login(): Promise<string> {

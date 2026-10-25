@@ -10,5 +10,5 @@ nextGameweekRoutes.use(requireAuth);
 
 // Best XI, bench order and captain for the next gameweek, plus price watch and differentials. Cached for 30 minutes.
 nextGameweekRoutes.get('/', async (req, res) => {
-  res.json(await nextGameweekService.getNextGameweek(undefined, forceRefresh(req)));
+  res.json(await nextGameweekService.getNextGameweek(forceRefresh(req)));
 });

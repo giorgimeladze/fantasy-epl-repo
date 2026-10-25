@@ -4,6 +4,8 @@ Each major update to the codebase gets its own spec: what needs to be done, what
 
 ## Index
 
+**Reading order:** the active spec (status *In progress*) first. Finished specs are records: read one only when your task changes that feature. Later specs supersede earlier ones.
+
 | # | Spec | Status |
 | --- | --- | --- |
 | 001 | [Initial dashboard](001-initial-dashboard.md) | Done |
@@ -12,6 +14,7 @@ Each major update to the codebase gets its own spec: what needs to be done, what
 | 004 | [Next gameweek: best XI, captain and extras](004-next-gameweek.md) | Done |
 | 005 | [Transfer suggestions](005-transfer-suggestions.md) | Done |
 | 006 | [Planner and explained numbers](006-planner.md) | Done |
+| 007 | [Structure cleanup, linting and agent guides](007-structure-cleanup.md) | Done |
 
 ## Conventions
 

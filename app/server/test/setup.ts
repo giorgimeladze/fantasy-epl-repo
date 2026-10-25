@@ -8,7 +8,7 @@ import type { Response } from 'supertest';
 import { config } from '../src/config/index.js';
 import { getDatabase } from '../src/db/database.js';
 import { fplClient } from '../src/fpl/fplClient.js';
-import { apiClient, login } from './helpers/namespace.js';
+import { apiClient, closeApp, login } from './helpers/namespace.js';
 import { mockServer, resetCalls } from './mockServer.js';
 
 // Without NODE_ENV=test the development config (and your real database) would be used.
@@ -33,8 +33,9 @@ export const mochaHooks = {
     resetFplMock();
   },
 
-  afterAll() {
+  async afterAll() {
     mockServer.close();
+    await closeApp();
   },
 };
 

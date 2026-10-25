@@ -77,7 +77,7 @@ For each squad player: the opponent in their club's next fixture, and the player
 
 ## Next gameweek: best XI and captain
 
-`nextGameweek/lineupOptimizer.ts` picks the lineup from the next gameweek's predicted points and play chances (`/api/next-gameweek`, the Next GW page). Details in [spec 004](docs/specs/004-next-gameweek.md).
+`shared/lineupOptimizer.ts` picks the lineup from the next gameweek's predicted points and play chances (`/api/next-gameweek`, the Next GW page). Details in [spec 004](docs/specs/004-next-gameweek.md).
 
 - **Search:** every legal XI from the 15 (1 GK; 3–5 DEF, 2–5 MID, 1–3 FWD; ~530 XIs) × every order of the 3 outfield bench players.
 - **Score of a lineup** = starters' predicted points + armband + expected automatic substitutions.

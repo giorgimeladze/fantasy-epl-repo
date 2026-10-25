@@ -1,8 +1,6 @@
+import { fixed, pct } from '../lib/format.ts';
 import type { FixtureProjection, Position } from '../types.ts';
 
-const pts = (value: number) => value.toFixed(2);
-const f2 = (value: number) => value.toFixed(2);
-const pct = (value: number) => `${Math.round(value * 100)}%`;
 const mins = (value: number) => `${Math.round(value)}′`;
 
 interface Line {
@@ -15,84 +13,92 @@ interface Line {
 function lines(f: FixtureProjection, position: Position): Line[] {
   const i = f.inputs;
   const startChance = i.availability * i.startShare;
+  const starts = `${pct(startChance)} start`;
+  const playsSixty = `${pct(i.sixtyMinuteChance)} plays 60′`;
   const minutes = startChance * i.minutesPerStart + i.subChance * i.subMinutes;
   const share = `${mins(minutes)}/90′`;
-  const venue = `${f2(i.venueFactor)} ${f.isHome ? 'home' : 'away'}`;
-  const h2h = f.headToHeadFactor !== 1 ? ` × ${f2(f.headToHeadFactor)} H2H` : '';
-  const fixture = `${f2(i.opponentDefence)} ${f.opponent} defence × ${venue}${h2h}`;
+  const venue = `${fixed(i.venueFactor)} ${f.isHome ? 'home' : 'away'}`;
+  const h2h = f.headToHeadFactor !== 1 ? ` × ${fixed(f.headToHeadFactor)} H2H` : '';
+  const fixture = `${fixed(i.opponentDefence)} ${f.opponent} defence × ${venue}${h2h}`;
   const b = f.breakdown;
 
   const result: Line[] = [
     {
       label: 'Minutes',
       formula:
-        `${pct(i.availability)} fit × ${pct(i.startShare)} starts × ${mins(i.minutesPerStart)} per start` +
-        (i.subChance > 0 ? ` + ${pct(i.subChance)} sub × ${mins(i.subMinutes)}` : ''),
+        `${pct(i.availability)} fit × ${pct(i.startShare)} starts × ${mins(i.minutesPerStart)} per start`
+        + (i.subChance > 0 ? ` + ${pct(i.subChance)} sub × ${mins(i.subMinutes)}` : ''),
       result: mins(minutes),
     },
     {
       label: 'Appearance',
-      formula: `${pct(startChance)} start + ${pct(i.subChance)} sub (1 pt) + ${pct(i.sixtyMinuteChance)} plays 60′ (1 more)`,
-      result: pts(b.appearance),
+      formula: `${pct(startChance)} start + ${pct(i.subChance)} sub (1 pt) + ${playsSixty} (1 more)`,
+      result: fixed(b.appearance),
     },
   ];
   if (b.goals !== 0) {
     result.push({
       label: 'Goals',
-      formula: `${f2(i.goalsPer90)} xG/90 × ${share} × ${fixture} = ${f2(f.expectedGoals)} xG × ${i.goalPoints} pts`,
-      result: pts(b.goals),
+      formula:
+        `${fixed(i.goalsPer90)} xG/90 × ${share} × ${fixture} = `
+        + `${fixed(f.expectedGoals)} xG × ${i.goalPoints} pts`,
+      result: fixed(b.goals),
     });
   }
   if (b.assists !== 0) {
     result.push({
       label: 'Assists',
-      formula: `${f2(i.assistsPer90)} xA/90 × ${share} × ${fixture} = ${f2(f.expectedAssists)} xA × ${i.assistPoints} pts`,
-      result: pts(b.assists),
+      formula:
+        `${fixed(i.assistsPer90)} xA/90 × ${share} × ${fixture} = `
+        + `${fixed(f.expectedAssists)} xA × ${i.assistPoints} pts`,
+      result: fixed(b.assists),
     });
   }
   const goalsAgainst =
-    `${f2(i.leagueGoalsPerMatch)} league goals × ${f2(i.opponentAttack)} ${f.opponent} attack × ` +
-    `${f2(i.clubDefence)} own defence ÷ ${venue} = ${f2(i.expectedGoalsAgainst)} goals against`;
+    `${fixed(i.leagueGoalsPerMatch)} league goals × ${fixed(i.opponentAttack)} ${f.opponent} attack × `
+    + `${fixed(i.clubDefence)} own defence ÷ ${venue} = ${fixed(i.expectedGoalsAgainst)} goals against`;
   if (b.cleanSheet !== 0) {
     result.push({
       label: 'Clean sheet',
-      formula: `${goalsAgainst} → ${pct(f.cleanSheetChance)} clean sheet × ${pct(i.sixtyMinuteChance)} plays 60′ × ${i.cleanSheetPoints} pts`,
-      result: pts(b.cleanSheet),
+      formula: `${goalsAgainst} → ${pct(f.cleanSheetChance)} clean sheet × ${playsSixty} × ${i.cleanSheetPoints} pts`,
+      result: fixed(b.cleanSheet),
     });
   }
   if (b.goalsConceded !== 0) {
     result.push({
       label: 'Goals conceded',
-      formula: `−1 per 2 of ${f2(i.expectedGoalsAgainst)} goals against (Poisson) × ${pct(i.sixtyMinuteChance)} plays 60′`,
-      result: pts(b.goalsConceded),
+      formula: `−1 per 2 of ${fixed(i.expectedGoalsAgainst)} goals against (Poisson) × ${playsSixty}`,
+      result: fixed(b.goalsConceded),
     });
   }
   if (position === 'GK' && b.saves !== 0) {
     result.push({
       label: 'Saves',
-      formula: `${f2(i.savesPerMatch)} saves per match (vs ${f.opponent}'s attack) → 1 pt per 3 × ${pct(startChance)} start`,
-      result: pts(b.saves),
+      formula: `${fixed(i.savesPerMatch)} saves per match (vs ${f.opponent}'s attack) → 1 pt per 3 × ${starts}`,
+      result: fixed(b.saves),
     });
   }
   if (b.bonus !== 0) {
     result.push({
       label: 'Bonus',
-      formula: `${f2(i.bonusPer90)} bonus/90 × ${share}${h2h}`,
-      result: pts(b.bonus),
+      formula: `${fixed(i.bonusPer90)} bonus/90 × ${share}${h2h}`,
+      result: fixed(b.bonus),
     });
   }
   if (i.defensiveThreshold !== null && b.defensiveContribution !== 0) {
     result.push({
       label: 'Defensive contribution',
-      formula: `${f2(i.defensiveActionsPerMatch)} actions per match → ${pct(i.defensiveContributionChance)} chance of ${i.defensiveThreshold}+ × ${pct(startChance)} start × 2 pts`,
-      result: pts(b.defensiveContribution),
+      formula:
+        `${fixed(i.defensiveActionsPerMatch)} actions per match → ${pct(i.defensiveContributionChance)} chance of `
+        + `${i.defensiveThreshold}+ × ${starts} × 2 pts`,
+      result: fixed(b.defensiveContribution),
     });
   }
   if (b.cards !== 0) {
     result.push({
       label: 'Cards',
-      formula: `−${f2(i.cardPointsPer90)} card points/90 × ${share}`,
-      result: pts(b.cards),
+      formula: `−${fixed(i.cardPointsPer90)} card points/90 × ${share}`,
+      result: fixed(b.cards),
     });
   }
   return result;
@@ -108,7 +114,7 @@ export function FixtureExplanation({ fixture, gameweek, position }: Props) {
   return (
     <div className="explain">
       <h4>
-        How GW{gameweek} {fixture.opponent} ({fixture.isHome ? 'H' : 'A'}) adds up to {fixture.points.toFixed(2)}
+        How GW{gameweek} {fixture.opponent} ({fixture.isHome ? 'H' : 'A'}) adds up to {fixed(fixture.points)}
       </h4>
       <dl className="explain-lines">
         {lines(fixture, position).map((line) => (

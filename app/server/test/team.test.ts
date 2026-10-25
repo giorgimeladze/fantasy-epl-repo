@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import type { PlayerView } from '../src/team/models.js';
-import { api, config, fplCalls, fplFails, fplReturns, MOCK_TEAM_ID, resetCalls, resetFplMock, withClockAhead, withTeamId } from './setup.js';
+import {
+  api,
+  config,
+  fplCalls,
+  fplFails,
+  fplReturns,
+  MOCK_TEAM_ID,
+  resetCalls,
+  resetFplMock,
+  withClockAhead,
+  withTeamId,
+} from './setup.js';
 
 describe('GET /api/team', () => {
   describe('building the team from FPL data', () => {
@@ -91,7 +102,12 @@ describe('GET /api/team', () => {
       const haaland = players.find((p) => p.webName === 'Haaland')!;
 
       assert.deepEqual(
-        raya.nextFixtures.map(({ gameweek, opponent, isHome, difficulty }) => ({ gameweek, opponent, isHome, difficulty })),
+        raya.nextFixtures.map(({ gameweek, opponent, isHome, difficulty }) => ({
+          gameweek,
+          opponent,
+          isHome,
+          difficulty,
+        })),
         [
           { gameweek: 3, opponent: 'LIV', isHome: true, difficulty: 4 },
           { gameweek: 4, opponent: 'CHE', isHome: false, difficulty: 3 },

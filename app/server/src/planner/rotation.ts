@@ -2,15 +2,13 @@
 // two, so a pair is worth the sum of the weekly maximum. Every pair is tried (20 × 19 / 2 = 190).
 // Only real rotations count: each club must be the better one in at least `minStarts` gameweeks,
 // otherwise "the best club + anyone" would top the list.
+import { round2, sum } from '../shared/numbers.js';
 import type { RotationPair } from './models.js';
 
 export interface ClubSeries {
   club: string;
   values: number[]; // one per gameweek: a keeper's predicted points, or the club's expected clean sheets
 }
-
-const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
-const sum = (values: readonly number[]) => values.reduce((a, b) => a + b, 0);
 
 export function bestPairs(
   series: readonly ClubSeries[],

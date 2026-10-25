@@ -40,15 +40,20 @@ export const tokenStore = {
   },
 };
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = tokenStore.get();
+interface RequestOptions extends RequestInit {
+  /** Send no bearer token, and treat a 401 as an ordinary error (the login form). */
+  anonymous?: boolean;
+}
+
+async function request<T>(path: string, { anonymous = false, ...init }: RequestOptions = {}): Promise<T> {
+  const token = anonymous ? null : tokenStore.get();
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (init.body) headers.set('Content-Type', 'application/json');
 
   const res = await fetch(`/api${path}`, { ...init, headers });
 
-  if (res.status === 401) throw new UnauthorizedError('Session expired, please sign in again');
+  if (res.status === 401 && !anonymous) throw new UnauthorizedError('Session expired, please sign in again');
   if (res.status === 204) return undefined as T;
 
   const body: unknown = await res.json().catch(() => null);
@@ -59,63 +64,32 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+/** A GET; `forceRefresh` adds `?refresh=true`, which skips the server's response cache. */
+const get = <T>(path: string, forceRefresh = false): Promise<T> =>
+  request<T>(forceRefresh ? `${path}?refresh=true` : path);
+
+const send = <T>(method: 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T> =>
+  request<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+
 export const api = {
-  async login(username: string, password: string): Promise<LoginResponse> {
-    const res = await fetch('/api/auth/login', {
+  login: (username: string, password: string) =>
+    request<LoginResponse>('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
-    });
-    const body: unknown = await res.json().catch(() => null);
-    if (!res.ok) throw new Error((body as { error?: string } | null)?.error ?? 'Login failed');
-    return body as LoginResponse;
-  },
+      anonymous: true,
+    }),
+  logout: () => request<void>('/auth/logout', { method: 'POST' }),
 
-  logout(): Promise<void> {
-    return request<void>('/auth/logout', { method: 'POST' });
-  },
+  getTeam: (forceRefresh = false) => get<MyTeamResponse>('/team', forceRefresh),
+  getHeadToHead: (forceRefresh = false) => get<HeadToHeadResponse>('/head-to-head', forceRefresh),
+  getScoutOptions: () => get<ScoutOptionsResponse>('/head-to-head/options'),
+  getPlayerHeadToHead: (playerId: number) => get<PlayerHeadToHeadResponse>(`/head-to-head/players/${playerId}`),
+  getProjections: (forceRefresh = false) => get<ProjectionsResponse>('/projections', forceRefresh),
+  getNextGameweek: (forceRefresh = false) => get<NextGameweekResponse>('/next-gameweek', forceRefresh),
+  getTransfers: (forceRefresh = false) => get<TransfersResponse>('/transfers', forceRefresh),
+  getPlanner: (forceRefresh = false) => get<PlannerResponse>('/planner', forceRefresh),
 
-  getTeam(forceRefresh = false): Promise<MyTeamResponse> {
-    return request<MyTeamResponse>(forceRefresh ? '/team?refresh=true' : '/team');
-  },
-
-  getHeadToHead(forceRefresh = false): Promise<HeadToHeadResponse> {
-    return request<HeadToHeadResponse>(forceRefresh ? '/head-to-head?refresh=true' : '/head-to-head');
-  },
-
-  getNextGameweek(forceRefresh = false): Promise<NextGameweekResponse> {
-    return request<NextGameweekResponse>(forceRefresh ? '/next-gameweek?refresh=true' : '/next-gameweek');
-  },
-
-  getTransfers(forceRefresh = false): Promise<TransfersResponse> {
-    return request<TransfersResponse>(forceRefresh ? '/transfers?refresh=true' : '/transfers');
-  },
-
-  getPlanner(forceRefresh = false): Promise<PlannerResponse> {
-    return request<PlannerResponse>(forceRefresh ? '/planner?refresh=true' : '/planner');
-  },
-
-  getDraft(): Promise<DraftPlanResponse> {
-    return request<DraftPlanResponse>('/planner/draft');
-  },
-
-  saveDraft(transfers: PlannedTransfer[]): Promise<DraftPlanResponse> {
-    return request<DraftPlanResponse>('/planner/draft', { method: 'PUT', body: JSON.stringify({ transfers }) });
-  },
-
-  clearDraft(): Promise<DraftPlanResponse> {
-    return request<DraftPlanResponse>('/planner/draft', { method: 'DELETE' });
-  },
-
-  getProjections(forceRefresh = false): Promise<ProjectionsResponse> {
-    return request<ProjectionsResponse>(forceRefresh ? '/projections?refresh=true' : '/projections');
-  },
-
-  getScoutOptions(): Promise<ScoutOptionsResponse> {
-    return request<ScoutOptionsResponse>('/head-to-head/options');
-  },
-
-  getPlayerHeadToHead(playerId: number): Promise<PlayerHeadToHeadResponse> {
-    return request<PlayerHeadToHeadResponse>(`/head-to-head/players/${playerId}`);
-  },
+  getDraft: () => get<DraftPlanResponse>('/planner/draft'),
+  saveDraft: (transfers: PlannedTransfer[]) => send<DraftPlanResponse>('PUT', '/planner/draft', { transfers }),
+  clearDraft: () => send<DraftPlanResponse>('DELETE', '/planner/draft'),
 };

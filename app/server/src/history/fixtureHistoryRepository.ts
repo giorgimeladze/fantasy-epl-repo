@@ -228,7 +228,12 @@ function createFixtureHistoryRepository(db: DatabaseSync) {
            WHERE n <= ?
            GROUP BY player_code, opponent_code`,
         )
-        .all(beforeSeason, limit) as { player_code: number; opponent_code: number; meetings: number; average: number }[];
+        .all(beforeSeason, limit) as Array<{
+        player_code: number;
+        opponent_code: number;
+        meetings: number;
+        average: number;
+      }>;
       const overall = db
         .prepare(
           `SELECT player_code, AVG(total_points) AS average FROM player_fixture_history
