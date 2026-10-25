@@ -7,10 +7,10 @@ Express API, organised by feature. Each feature folder holds its routes, service
 - `history/` — past seasons: downloading the CSVs and the `player_fixture_history` table.
 - `db/` — SQLite connection, migrations and the shared response cache.
 - `utils/` — `HttpError` + error middleware + `forceRefresh(req)`, CSV parser, `mapWithConcurrency`.
+- `config/` — all settings; `development.ts` / `testing.ts` / `production.ts` hold what differs per `NODE_ENV`.
 - `scripts/` — CLI entry points (`npm run backtest`).
+- `docs/` — ground rules for common tasks (linked below).
 
 Request flow: `server.ts` → `app.ts` → `routes.ts` → `<feature>/routes.ts` (thin: parse, `requireAuth`, call the service) → `<feature>/<feature>Service.ts` (fetch via `fplClient`, cache via `cachedResponse`).
 
-Adding a feature: new folder with `routes.ts`, a service, and `models.ts` for its response types; mount it in `routes.ts`; re-export `models.ts` from `app/client/src/types.ts`; add a method to `apiClient` in `test/helpers/namespace.ts` and an E2E spec.
-
-`<feature>/models.ts` files are the API contract and are imported by the client, so they must contain types only (no runtime imports, no Node types).
+Guidelines: [adding an endpoint](docs/adding-endpoints.md), [writing tests](docs/writing-tests.md), [config variables](docs/config-variables.md). `<feature>/models.ts` files must stay types-only (the client imports them).

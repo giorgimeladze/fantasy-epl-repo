@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import type { FplBootstrap, FplElementSummary, FplEntry, FplFixture, FplLive, FplPicks } from './models.js';
 import { HttpError } from '../utils/http.js';
 

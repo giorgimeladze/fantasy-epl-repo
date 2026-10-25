@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 
 // Append-only: each entry upgrades the schema by one version (tracked in PRAGMA user_version).
 const MIGRATIONS: string[] = [

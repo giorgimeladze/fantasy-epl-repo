@@ -45,8 +45,4 @@ export const responseCache = {
       )
       .run(key, JSON.stringify(payload), fetchedAt);
   },
-
-  clear(): void {
-    getDatabase().exec('DELETE FROM response_cache');
-  },
 };

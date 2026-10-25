@@ -243,10 +243,6 @@ function createFixtureHistoryRepository(db: DatabaseSync) {
         overall: new Map(overall.map((r) => [r.player_code, r.average])),
       };
     },
-
-    clear(): void {
-      db.exec('DELETE FROM player_fixture_history; DELETE FROM history_import;');
-    },
   };
 }
 

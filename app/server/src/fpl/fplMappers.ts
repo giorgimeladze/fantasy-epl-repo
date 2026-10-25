@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import type { FplBootstrap, FplElement, FplFixture } from './models.js';
 import type { Position, UpcomingFixture } from '../team/models.js';
 

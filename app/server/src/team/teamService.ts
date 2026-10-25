@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import { cachedResponse } from '../db/responseCache.js';
 import type { FplBootstrap, FplElement, FplPick } from '../fpl/models.js';
 import type { MyTeamResponse, PlayerView, TeamSnapshot, UpcomingFixture } from './models.js';

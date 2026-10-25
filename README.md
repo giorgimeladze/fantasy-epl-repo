@@ -72,13 +72,12 @@ npm start          # one process: API and built app on http://localhost:3001
 
 ## Caching
 
-The first time your team loads, the server fetches it from the FPL API and stores it in the SQLite `team_cache` table. **For the next 30 minutes, every request is served from the database without calling FPL.** After that, the next request fetches fresh data.
+The first time a page loads, the server builds its response from the FPL API and stores it in the SQLite `response_cache` table (one row per endpoint, e.g. `team:<id>`, `head-to-head:<id>`, `projections:<id>`, `next-gameweek:<id>`). **For the next 30 minutes, every request is served from the database without calling FPL.** After that, the next request fetches fresh data.
 
-- The dashboard shows when the data was fetched and whether it came from the cache.
-- The **Refresh** button skips the cache (`GET /api/team?refresh=true`) and saves fresh data.
+- Every page shows when its data was fetched and whether it came from the cache.
+- Each page's **Refresh** button skips the cache (e.g. `GET /api/team?refresh=true`) and saves fresh data.
 - To wipe the cache, stop the server and delete `app/server/data/`.
-- To change the 30-minute TTL, edit `config.db.cacheTtlMs` (shared by all data endpoints) in [`app/server/src/config.ts`](app/server/src/config.ts).
-- The Head-to-head page is cached the same way (`config.db.headToHeadCacheTtlMs`), with its own Refresh button.
+- To change the 30-minute TTL, edit `config.db.cacheTtlMs` (shared by all data endpoints) in [`app/server/src/config/index.ts`](app/server/src/config/index.ts).
 
 ### Match history
 
@@ -91,27 +90,28 @@ FPL's API only has match-by-match stats for the current season. Earlier seasons 
 
 ## Tests
 
-Server tests use **Mocha**, with `node:assert` for assertions and `supertest` for HTTP routes. They never call the network. `fetch` is stubbed to return mocked responses from [`app/server/test/mocks/fpl/`](app/server/test/mocks/fpl/) (FPL API) and [`app/server/test/mocks/history/`](app/server/test/mocks/history/) (past-season CSVs), and the database is in-memory SQLite.
+Server tests use **Mocha**, with `node:assert` for assertions, `supertest` for HTTP calls and **[MSW](https://mswjs.io)** for the outside world. They never call the network: every FPL API and past-season request is answered by [`app/server/test/mockServer.ts`](app/server/test/mockServer.ts), and the database is in-memory SQLite. `npm test` sets `NODE_ENV=test`, so the fixed values in [`src/config/testing.ts`](app/server/src/config/testing.ts) are used, never your `.env`.
 
 ```bash
 npm test                         # all server tests
 npm run test:watch -w app/server     # re-run on change
 ```
 
-All tests are end to end: they call the HTTP API through the typed client in `test/helpers/namespace.ts`, with the FPL API and the history source mocked and SQLite in memory.
+How to write a new test: [app/server/src/docs/writing-tests.md](app/server/src/docs/writing-tests.md).
+
+All tests are end to end. [`test/setup.ts`](app/server/test/setup.ts) starts the mock server, logs in once and resets the caches before each test, so a spec only imports what it uses (`import { api, fplCalls } from './setup.js'`) and calls endpoints like `api.team()`.
 
 | File | Covers |
 | --- | --- |
-| `test/app.test.ts` | Health check, JSON 404, every protected endpoint rejects missing or invalid tokens |
-| `test/auth.test.ts` | Login, validation, unconfigured credentials, session expiry, logout |
+| `test/app.test.ts` | Health check, logged-in session, JSON 404, every protected endpoint rejects missing or invalid tokens |
 | `test/team.test.ts` | `/api/team`: building the team from mocked FPL data, "points for me" (captaincy, autosubs, transfers), the 30-minute SQLite cache, error mapping |
 | `test/headToHead.test.ts` | `/api/head-to-head`: last 4 matches vs the next opponent across seasons, insights, summaries, caching, importing past seasons once; the scout picker and single-player endpoints |
 | `test/projections.test.ts` | `/api/projections`: predictions per gameweek, double and blank gameweeks, breakdowns, injuries, head-to-head factor, play chance, top players, differentials, caching |
 | `test/nextGameweek.test.ts` | `/api/next-gameweek`: legal XI and bench, best formation, captain and vice-captain, automatic substitutions, swaps vs the current lineup, reasons, blank and double gameweeks, price watch, caching |
 
-The mock data describes a 2-gameweek season for team `123456` (GW3–5 still to play; Arsenal have a double and Man City a blank in GW5). GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. To add a scenario, drop a JSON file in `test/mocks/fpl/` and map it with `mockFplApi({ '/path/': 'file.json' })`. You can also pass an inline response, e.g. `{ status: 503 }`.
+The mock data describes a 2-gameweek season for team `123456` (GW3–5 still to play; Arsenal have a double and Man City a blank in GW5). GW1 is finished: Salah is captain and Gvardiol is auto-subbed for Colwill. GW2 is live: Isak has been swapped for Jackson and Haaland is captain. There are also upcoming fixtures, one of them unscheduled. It all lives in `test/mockServer.ts`. To change a response for one test, call `fplReturns('/path/', body)` or `fplFails('/path/', 503)`; it is reset after the test. `bootstrap()` gives a copy of bootstrap-static to edit first.
 
-The history mocks cover 2023-24 to 2025-26; 2022-23 is deliberately missing to test the skip path. In them, Salah has 5 games against Arsenal (one at 0 minutes, which is ignored), Raya changes club, and Haaland never meets his next opponent.
+The past-season mocks (also in `test/mockServer.ts`) cover 2023-24 to 2025-26; 2022-23 is deliberately missing to test the skip path. In them, Salah has 5 games against Arsenal (one at 0 minutes, which is ignored), Raya changes club, and Haaland never meets his next opponent.
 
 ## Scripts
 

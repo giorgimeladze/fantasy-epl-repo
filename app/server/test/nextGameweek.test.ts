@@ -1,23 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import type { FplBootstrap, FplElement } from '../src/fpl/models.js';
 import type { LineupChoice, LineupPlayer, NextGameweekResponse } from '../src/nextGameweek/models.js';
-import { mockFplApi } from './helpers/mockFplApi.js';
-import { type ApiClient, loginAsAdmin, useTestEnvironment } from './helpers/namespace.js';
+import { api, bootstrap, fplReturns } from './setup.js';
 
 const FORMATIONS = ['3-4-3', '3-5-2', '4-3-3', '4-4-2', '4-5-1', '5-3-2', '5-4-1'];
-
-function bootstrap(): FplBootstrap {
-  return JSON.parse(
-    readFileSync(new URL('./mocks/fpl/bootstrap-static.json', import.meta.url), 'utf8'),
-  ) as FplBootstrap;
-}
 
 /** Serves a bootstrap with `edit` applied. */
 function withBootstrap(edit: (b: FplBootstrap) => void): void {
   const b = bootstrap();
   edit(b);
-  mockFplApi({ '/bootstrap-static/': { status: 200, body: b } });
+  fplReturns('/bootstrap-static/', b);
 }
 
 function editPlayer(b: FplBootstrap, name: string, changes: Partial<FplElement>): void {
@@ -33,15 +25,8 @@ const byName = (choice: LineupChoice, name: string) =>
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 
 describe('GET /api/next-gameweek', () => {
-  useTestEnvironment();
-  let admin: ApiClient;
-
-  beforeEach(async () => {
-    admin = await loginAsAdmin();
-  });
-
   it('plans the next gameweek against the current lineup', async () => {
-    const { status, body } = await admin.nextGameweek();
+    const { status, body } = await api.nextGameweek();
     const next: NextGameweekResponse = body;
 
     assert.equal(status, 200);
@@ -53,7 +38,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('picks a legal XI and a bench with the backup goalkeeper first', async () => {
-    const { best }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { best }: NextGameweekResponse = (await api.nextGameweek()).body;
 
     assert.equal(best.starters.length, 11);
     assert.equal(best.bench.length, 4);
@@ -66,7 +51,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('chooses the formation with the most predicted points, counting captain and autosubs', async () => {
-    const next: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const next: NextGameweekResponse = (await api.nextGameweek()).body;
     const { best } = next;
 
     assert.deepEqual(next.formations.map((f) => f.formation).sort(), [...FORMATIONS].sort());
@@ -81,7 +66,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('keeps an injured player out and puts him last on the bench', async () => {
-    const { best }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { best }: NextGameweekResponse = (await api.nextGameweek()).body;
     const havertz = byName(best, 'Havertz'); // injured, 0 % chance
 
     assert.ok(!names(best.starters).includes('Havertz'));
@@ -94,7 +79,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('counts automatic substitutions for doubtful starters', async () => {
-    const { current }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { current }: NextGameweekResponse = (await api.nextGameweek()).body;
 
     // Gvardiol (75 %) starts in the current lineup, so the bench is expected to chip in.
     assert.ok(names(current.starters).includes('Gvardiol'));
@@ -109,7 +94,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('suggests the captain and vice-captain, with the top 3 options', async () => {
-    const { best, captainOptions }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { best, captainOptions }: NextGameweekResponse = (await api.nextGameweek()).body;
     const starterIds = best.starters.map((p) => p.id);
 
     assert.equal(captainOptions.length, 3);
@@ -124,10 +109,10 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('makes the best-scoring other starter vice-captain, even when the captain is sure to play', async () => {
-    const captain = (await admin.nextGameweek()).body.captainOptions[0].player.webName as string;
+    const captain = (await api.nextGameweek()).body.captainOptions[0].player.webName as string;
     withBootstrap((b) => editPlayer(b, captain, { starts: 2, minutes: 180 }));
     for (const refresh of [false, true]) {
-      const { best }: NextGameweekResponse = (await admin.nextGameweek({ refresh })).body;
+      const { best }: NextGameweekResponse = (await api.nextGameweek({ refresh })).body;
       const others = best.starters.filter((p) => p.id !== best.captainId);
       const top = Math.max(...others.map((p) => p.points));
       assert.equal(others.find((p) => p.id === best.viceCaptainId)!.points, top);
@@ -135,18 +120,18 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('moves the armband away from a doubtful captain', async () => {
-    const before: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const before: NextGameweekResponse = (await api.nextGameweek()).body;
     withBootstrap((b) =>
       editPlayer(b, before.captainOptions[0]!.player.webName, { status: 'd', chance_of_playing_next_round: 25 }),
     );
-    const after: NextGameweekResponse = (await admin.nextGameweek({ refresh: true })).body;
+    const after: NextGameweekResponse = (await api.nextGameweek({ refresh: true })).body;
 
     assert.notEqual(after.best.captainId, before.best.captainId);
     assert.ok(after.captainChange === null || after.captainChange.to.id === after.best.captainId);
   });
 
   it('lists the swaps that turn the current XI into the best one', async () => {
-    const next: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const next: NextGameweekResponse = (await api.nextGameweek()).body;
     const current = new Set(next.current.starters.map((p) => p.id));
     for (const change of next.changes) {
       assert.ok(current.has(change.out.id) && !current.has(change.in.id));
@@ -164,7 +149,7 @@ describe('GET /api/next-gameweek', () => {
       editPlayer(b, 'N.Jackson', { status: 'i', chance_of_playing_next_round: 0 }); // only Haaland left up front
       editPlayer(b, 'Rice', { expected_goals: '5.00' }); // a fifth midfielder worth starting
     });
-    const next: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const next: NextGameweekResponse = (await api.nextGameweek()).body;
 
     assert.equal(next.best.formation, '4-5-1');
     const pairs = next.changes.map((c) => `${c.in.webName}>${c.out.webName}`);
@@ -178,7 +163,7 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('explains each player with their fixture and where the points come from', async () => {
-    const { best }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { best }: NextGameweekResponse = (await api.nextGameweek()).body;
 
     for (const p of best.starters) {
       assert.match(p.reasons[0]!, /^vs [A-Z]{3} \([HA]\)$/, `${p.webName}: ${p.reasons.join(' | ')}`);
@@ -192,7 +177,7 @@ describe('GET /api/next-gameweek', () => {
     withBootstrap((b) => {
       for (const e of b.events) e.is_next = e.id === 5;
     });
-    const next: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const next: NextGameweekResponse = (await api.nextGameweek()).body;
     const manCity = ['Gvardiol', 'Foden', 'Haaland'];
 
     assert.equal(next.gameweek, 5);
@@ -211,7 +196,7 @@ describe('GET /api/next-gameweek', () => {
 
   describe('price watch', () => {
     it('flags squad players whose price is about to move, soonest first', async () => {
-      const { priceWatch }: NextGameweekResponse = (await admin.nextGameweek()).body;
+      const { priceWatch }: NextGameweekResponse = (await api.nextGameweek()).body;
 
       assert.equal(priceWatch.available, true);
       assert.deepEqual(
@@ -230,7 +215,7 @@ describe('GET /api/next-gameweek', () => {
     });
 
     it('lists the league’s likeliest risers and fallers, skipping locked prices', async () => {
-      const { priceWatch }: NextGameweekResponse = (await admin.nextGameweek()).body;
+      const { priceWatch }: NextGameweekResponse = (await api.nextGameweek()).body;
 
       // Haaland's price is locked, so his "rise" can't happen yet; Rice is only "possible".
       assert.deepEqual(
@@ -253,14 +238,14 @@ describe('GET /api/next-gameweek', () => {
           delete e.price_change_percent;
         }
       });
-      const { priceWatch }: NextGameweekResponse = (await admin.nextGameweek()).body;
+      const { priceWatch }: NextGameweekResponse = (await api.nextGameweek()).body;
 
       assert.deepEqual(priceWatch, { available: false, squad: [], risers: [], fallers: [] });
     });
   });
 
   it('includes differentials from the projections', async () => {
-    const { differentials }: NextGameweekResponse = (await admin.nextGameweek()).body;
+    const { differentials }: NextGameweekResponse = (await api.nextGameweek()).body;
     assert.deepEqual(
       differentials.FWD.map((p) => p.webName),
       ['Isak'],
@@ -268,11 +253,11 @@ describe('GET /api/next-gameweek', () => {
   });
 
   it('serves repeat requests from the SQLite cache, and rebuilds on ?refresh=true', async () => {
-    const first = await admin.nextGameweek();
-    const second = await admin.nextGameweek();
+    const first = await api.nextGameweek();
+    const second = await api.nextGameweek();
     assert.equal(first.body.cache.fromCache, false);
     assert.equal(second.body.cache.fromCache, true);
     assert.deepEqual(second.body.best, first.body.best);
-    assert.equal((await admin.nextGameweek({ refresh: true })).body.cache.fromCache, false);
+    assert.equal((await api.nextGameweek({ refresh: true })).body.cache.fromCache, false);
   });
 });

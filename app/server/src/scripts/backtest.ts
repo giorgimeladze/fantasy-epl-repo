@@ -1,6 +1,6 @@
 // Scores the predicted-points model against a past season: `npm run backtest [-- 2025-26]`.
 // Downloads past seasons into SQLite first if they aren't there yet.
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import { fixtureHistoryRepository } from '../history/fixtureHistoryRepository.js';
 import type { Position } from '../team/models.js';
 import { type BacktestScores, runBacktest } from '../projections/backtest.js';

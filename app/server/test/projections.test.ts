@@ -1,20 +1,12 @@
 import assert from 'node:assert/strict';
 import type { PlayerProjection, ProjectionsResponse } from '../src/projections/models.js';
-import { fplCalls } from './helpers/mockFplApi.js';
-import { type ApiClient, loginAsAdmin, useTestEnvironment } from './helpers/namespace.js';
+import { api, fplCalls } from './setup.js';
 
 const byName = (players: PlayerProjection[], name: string) => players.find((p) => p.webName === name)!;
 
 describe('GET /api/projections', () => {
-  useTestEnvironment();
-  let admin: ApiClient;
-
-  beforeEach(async () => {
-    admin = await loginAsAdmin();
-  });
-
   it('projects the squad in pick order for the upcoming gameweeks', async () => {
-    const res = await admin.projections();
+    const res = await api.projections();
     const body: ProjectionsResponse = res.body;
 
     assert.equal(res.status, 200);
@@ -35,7 +27,7 @@ describe('GET /api/projections', () => {
   });
 
   it('adds both fixtures in a double gameweek and nothing in a blank', async () => {
-    const squad: PlayerProjection[] = (await admin.projections()).body.squad;
+    const squad: PlayerProjection[] = (await api.projections()).body.squad;
     const raya = byName(squad, 'Raya'); // Arsenal play twice in GW5
     const haaland = byName(squad, 'Haaland'); // Man City don't play in GW5
 
@@ -51,7 +43,7 @@ describe('GET /api/projections', () => {
   });
 
   it('explains each fixture with a breakdown that adds up to its points', async () => {
-    const fixture = byName((await admin.projections()).body.squad, 'M.Salah').gameweeks[0]!.fixtures[0]!;
+    const fixture = byName((await api.projections()).body.squad, 'M.Salah').gameweeks[0]!.fixtures[0]!;
 
     assert.equal(fixture.opponent, 'ARS');
     assert.equal(fixture.isHome, false);
@@ -62,7 +54,7 @@ describe('GET /api/projections', () => {
   });
 
   it('uses FPL’s injury flags and shows FPL’s own forecast', async () => {
-    const squad: PlayerProjection[] = (await admin.projections()).body.squad;
+    const squad: PlayerProjection[] = (await api.projections()).body.squad;
     const havertz = byName(squad, 'Havertz'); // injured, 0 % chance next round
 
     assert.equal(havertz.status, 'i');
@@ -73,7 +65,7 @@ describe('GET /api/projections', () => {
   });
 
   it('adjusts for the record against the opponent from past seasons', async () => {
-    const squad: PlayerProjection[] = (await admin.projections()).body.squad;
+    const squad: PlayerProjection[] = (await api.projections()).body.squad;
     // Salah's last 4 vs Arsenal average 6.25 against 5.4 overall → 1 + 0.15 × (6.25/5.4 − 1).
     const factor = byName(squad, 'M.Salah').gameweeks[0]!.fixtures[0]!.headToHeadFactor;
     assert.equal(factor, Math.round((1 + 0.15 * (6.25 / 5.4 - 1)) * 100) / 100);
@@ -82,7 +74,7 @@ describe('GET /api/projections', () => {
   });
 
   it('lists the top players per position across the league, marking squad players', async () => {
-    const top: ProjectionsResponse['top'] = (await admin.projections()).body.top;
+    const top: ProjectionsResponse['top'] = (await api.projections()).body.top;
 
     assert.deepEqual(Object.keys(top), ['GK', 'DEF', 'MID', 'FWD']);
     assert.equal(top.FWD.length, 4); // every forward in the mock league
@@ -98,17 +90,17 @@ describe('GET /api/projections', () => {
   });
 
   it('gives each gameweek a chance of playing, higher in a double gameweek', async () => {
-    const raya = byName((await admin.projections()).body.squad, 'Raya');
+    const raya = byName((await api.projections()).body.squad, 'Raya');
     const [gw3, , gw5] = raya.gameweeks;
 
     assert.equal(gw3!.playChance, gw3!.fixtures[0]!.playChance);
     assert.ok(gw3!.fixtures[0]!.playChance >= gw3!.fixtures[0]!.startChance);
     assert.ok(gw5!.playChance >= Math.max(...gw5!.fixtures.map((f) => f.playChance)));
-    assert.equal(byName((await admin.projections()).body.squad, 'Havertz').gameweeks[0]!.playChance, 0);
+    assert.equal(byName((await api.projections()).body.squad, 'Havertz').gameweeks[0]!.playChance, 0);
   });
 
   it('lists differentials: players outside the squad owned by under 10 %', async () => {
-    const body: ProjectionsResponse = (await admin.projections()).body;
+    const body: ProjectionsResponse = (await api.projections()).body;
 
     // Isak (4.2 %) is the only player outside the squad in the mock league.
     assert.deepEqual(
@@ -122,16 +114,16 @@ describe('GET /api/projections', () => {
   });
 
   it('serves repeat requests from the SQLite cache, and rebuilds on ?refresh=true', async () => {
-    const first = await admin.projections();
+    const first = await api.projections();
     const callsAfterFirst = fplCalls.length;
-    const second = await admin.projections();
+    const second = await api.projections();
 
     assert.equal(first.body.cache.fromCache, false);
     assert.equal(second.body.cache.fromCache, true);
     assert.equal(fplCalls.length, callsAfterFirst);
     assert.deepEqual(second.body.squad, first.body.squad);
 
-    const refreshed = await admin.projections({ refresh: true });
+    const refreshed = await api.projections({ refresh: true });
     assert.equal(refreshed.body.cache.fromCache, false);
   });
 });

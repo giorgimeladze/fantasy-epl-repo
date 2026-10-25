@@ -1,5 +1,5 @@
 import { createApp } from './app.js';
-import { config } from './config.js';
+import { config } from './config/index.js';
 import { authService } from './auth/authService.js';
 
 if (!authService.isConfigured()) {

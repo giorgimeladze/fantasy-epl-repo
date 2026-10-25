@@ -1,24 +1,16 @@
 import assert from 'node:assert/strict';
 import type { PlayerHeadToHead, ScoutOptionsResponse } from '../src/headToHead/models.js';
-import { fplCalls, historyCalls, mockFplApi, resetCalls } from './helpers/mockFplApi.js';
-import { type ApiClient, loginAsAdmin, useTestEnvironment } from './helpers/namespace.js';
+import { api, fplCalls, historyCalls, resetCalls, resetFplMock } from './setup.js';
 
 const byName = (players: PlayerHeadToHead[], name: string) => players.find((p) => p.player.webName === name)!;
 
-// The mock season starts in August 2026; 2022-23 is missing from test/mocks/history.
+// The mock season starts in August 2026; 2022-23 is missing from test/mockServer.ts.
 const SEASONS_COVERED = ['2026-27', '2025-26', '2024-25', '2023-24'];
 
 describe('head-to-head', () => {
-  useTestEnvironment();
-  let admin: ApiClient;
-
-  beforeEach(async () => {
-    admin = await loginAsAdmin();
-  });
-
   describe('GET /api/head-to-head', () => {
     it('covers every squad player across the current season and every past season the source has', async () => {
-      const { status, body } = await admin.headToHead();
+      const { status, body } = await api.headToHead();
 
       assert.equal(status, 200);
       assert.deepEqual(body.seasonsCovered, SEASONS_COVERED);
@@ -27,7 +19,7 @@ describe('head-to-head', () => {
     });
 
     it('returns the last 4 matches each player played against their next opponent, newest first', async () => {
-      const salah = byName((await admin.headToHead()).body.players, 'M.Salah');
+      const salah = byName((await api.headToHead()).body.players, 'M.Salah');
 
       assert.equal(salah.nextFixture?.opponent, 'ARS');
       assert.deepEqual(
@@ -42,7 +34,7 @@ describe('head-to-head', () => {
     });
 
     it('includes result, venue and insights for each match, without internal codes', async () => {
-      const [latest, , , oldest] = byName((await admin.headToHead()).body.players, 'M.Salah').matches;
+      const [latest, , , oldest] = byName((await api.headToHead()).body.players, 'M.Salah').matches;
 
       assert.equal(latest!.wasHome, true);
       assert.equal(latest!.result, 'W');
@@ -61,7 +53,7 @@ describe('head-to-head', () => {
     });
 
     it('summarises the record against the opponent', async () => {
-      const salah = byName((await admin.headToHead()).body.players, 'M.Salah');
+      const salah = byName((await api.headToHead()).body.players, 'M.Salah');
 
       assert.deepEqual(salah.summary, {
         matches: 4,
@@ -77,7 +69,7 @@ describe('head-to-head', () => {
     });
 
     it('shows the club a player was at when they met the opponent', async () => {
-      const raya = byName((await admin.headToHead()).body.players, 'Raya');
+      const raya = byName((await api.headToHead()).body.players, 'Raya');
 
       assert.equal(raya.nextFixture?.opponent, 'LIV');
       assert.deepEqual(
@@ -88,7 +80,7 @@ describe('head-to-head', () => {
     });
 
     it('returns an empty record for players who have never faced the opponent', async () => {
-      const haaland = byName((await admin.headToHead()).body.players, 'Haaland');
+      const haaland = byName((await api.headToHead()).body.players, 'Haaland');
 
       assert.equal(haaland.nextFixture?.opponent, 'CHE');
       assert.deepEqual(haaland.matches, []);
@@ -96,10 +88,10 @@ describe('head-to-head', () => {
     });
 
     it('serves repeat requests from the SQLite cache without calling either source', async () => {
-      await admin.headToHead();
+      await api.headToHead();
       resetCalls();
 
-      const again = await admin.headToHead();
+      const again = await api.headToHead();
 
       assert.equal(again.body.cache.fromCache, true);
       assert.deepEqual(fplCalls, []);
@@ -107,10 +99,10 @@ describe('head-to-head', () => {
     });
 
     it('re-reads live data but downloads only missing past seasons on ?refresh=true', async () => {
-      await admin.headToHead();
-      mockFplApi();
+      await api.headToHead();
+      resetFplMock();
 
-      const refreshed = await admin.headToHead({ refresh: true });
+      const refreshed = await api.headToHead({ refresh: true });
 
       assert.equal(refreshed.body.cache.fromCache, false);
       assert.ok(fplCalls.includes('/element-summary/9/'));
@@ -124,7 +116,7 @@ describe('head-to-head', () => {
 
   describe('GET /api/head-to-head/options', () => {
     it('lists clubs by name with their players ordered by position, then name', async () => {
-      const res = await admin.scoutOptions();
+      const res = await api.scoutOptions();
       const body: ScoutOptionsResponse = res.body;
 
       assert.equal(res.status, 200);
@@ -143,8 +135,8 @@ describe('head-to-head', () => {
 
   describe('GET /api/head-to-head/players/:id', () => {
     it('gives the same analysis for a single player as the squad view', async () => {
-      const single = (await admin.scoutPlayer(9)).body;
-      const squad: PlayerHeadToHead[] = (await admin.headToHead()).body.players;
+      const single = (await api.scoutPlayer(9)).body;
+      const squad: PlayerHeadToHead[] = (await api.headToHead()).body.players;
       const fromSquad = squad.find((p) => p.player.id === 9)!;
 
       assert.equal(single.player.webName, 'M.Salah');
@@ -155,7 +147,7 @@ describe('head-to-head', () => {
     });
 
     it('works for players outside the squad, without loading the manager team', async () => {
-      const isak = (await admin.scoutPlayer(16)).body; // sold after GW1
+      const isak = (await api.scoutPlayer(16)).body; // sold after GW1
 
       assert.deepEqual(isak.player, {
         id: 16,
@@ -171,18 +163,18 @@ describe('head-to-head', () => {
     });
 
     it('caches each player separately for 30 minutes', async () => {
-      await admin.scoutPlayer(9);
+      await api.scoutPlayer(9);
       resetCalls();
 
-      assert.equal((await admin.scoutPlayer(9)).body.cache.fromCache, true);
+      assert.equal((await api.scoutPlayer(9)).body.cache.fromCache, true);
       assert.deepEqual(fplCalls, []);
-      assert.equal((await admin.scoutPlayer(16)).body.cache.fromCache, false);
+      assert.equal((await api.scoutPlayer(16)).body.cache.fromCache, false);
     });
 
     it('validates the player id', async () => {
-      assert.equal((await admin.scoutPlayer('abc')).status, 400);
-      assert.equal((await admin.scoutPlayer(0)).status, 400);
-      assert.equal((await admin.scoutPlayer(9999)).status, 404);
+      assert.equal((await api.scoutPlayer('abc')).status, 400);
+      assert.equal((await api.scoutPlayer(0)).status, 400);
+      assert.equal((await api.scoutPlayer(9999)).status, 404);
     });
   });
 });

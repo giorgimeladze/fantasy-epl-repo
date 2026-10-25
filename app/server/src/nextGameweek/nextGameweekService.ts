@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import { cachedResponse } from '../db/responseCache.js';
 import { fplClient } from '../fpl/fplClient.js';
 import type { FplBootstrap } from '../fpl/models.js';

@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../config/index.js';
 import { fixtureHistoryRepository } from './fixtureHistoryRepository.js';
 import type { FplBootstrap } from '../fpl/models.js';
 import type { FixtureRecord } from '../headToHead/models.js';

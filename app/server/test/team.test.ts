@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
-import { config } from '../src/config.js';
 import type { PlayerView } from '../src/team/models.js';
-import { fplCalls, MOCK_TEAM_ID, mockFplApi, resetCalls } from './helpers/mockFplApi.js';
-import { type ApiClient, loginAsAdmin, useTestEnvironment, withClockAhead, withTeamId } from './helpers/namespace.js';
+import { api, config, fplCalls, fplFails, fplReturns, MOCK_TEAM_ID, resetCalls, resetFplMock, withClockAhead, withTeamId } from './setup.js';
 
 describe('GET /api/team', () => {
-  useTestEnvironment();
-  let admin: ApiClient;
-
-  beforeEach(async () => {
-    admin = await loginAsAdmin();
-  });
-
   describe('building the team from FPL data', () => {
     it('returns the manager summary and current gameweek', async () => {
-      const { status, body } = await admin.team();
+      const { status, body } = await api.team();
 
       assert.equal(status, 200);
       assert.deepEqual(body.manager, {
@@ -35,7 +26,7 @@ describe('GET /api/team', () => {
     });
 
     it('lists all 15 players in pick order with XI, bench and armbands', async () => {
-      const players: PlayerView[] = (await admin.team()).body.players;
+      const players: PlayerView[] = (await api.team()).body.players;
 
       assert.deepEqual(
         players.map((p) => p.pickPosition),
@@ -52,7 +43,7 @@ describe('GET /api/team', () => {
     });
 
     it('maps player stats, positions, prices and availability', async () => {
-      const players: PlayerView[] = (await admin.team()).body.players;
+      const players: PlayerView[] = (await api.team()).body.players;
       const salah = players.find((p) => p.id === 9)!;
       const havertz = players.find((p) => p.id === 15)!;
 
@@ -72,7 +63,7 @@ describe('GET /api/team', () => {
     });
 
     it('computes points earned for the manager: captaincy, autosubs and transfers', async () => {
-      const players: PlayerView[] = (await admin.team()).body.players;
+      const players: PlayerView[] = (await api.team()).body.players;
       const pointsForMe = Object.fromEntries(players.map((p) => [p.webName, p.pointsForMe]));
 
       assert.deepEqual(pointsForMe, {
@@ -95,7 +86,7 @@ describe('GET /api/team', () => {
     });
 
     it('attaches upcoming fixtures with difficulty, skipping unscheduled ones', async () => {
-      const players: PlayerView[] = (await admin.team()).body.players;
+      const players: PlayerView[] = (await api.team()).body.players;
       const raya = players.find((p) => p.webName === 'Raya')!;
       const haaland = players.find((p) => p.webName === 'Haaland')!;
 
@@ -117,7 +108,7 @@ describe('GET /api/team', () => {
 
   describe('SQLite cache', () => {
     it('fetches from FPL first, then serves repeat requests from the cache', async () => {
-      const first = await admin.team();
+      const first = await api.team();
       assert.equal(first.body.cache.fromCache, false);
       assert.ok(fplCalls.length > 0);
       assert.equal(
@@ -126,7 +117,7 @@ describe('GET /api/team', () => {
       );
 
       resetCalls();
-      const second = await admin.team();
+      const second = await api.team();
 
       assert.equal(second.body.cache.fromCache, true);
       assert.equal(second.body.cache.fetchedAt, first.body.cache.fetchedAt);
@@ -135,20 +126,20 @@ describe('GET /api/team', () => {
     });
 
     it('refetches once the cached team is older than 30 minutes', async () => {
-      await admin.team();
+      await api.team();
       resetCalls();
 
-      const later = await withClockAhead(config.db.cacheTtlMs + 1000, () => admin.team());
+      const later = await withClockAhead(config.db.cacheTtlMs + 1000, () => api.team());
 
       assert.equal(later.body.cache.fromCache, false);
       assert.ok(fplCalls.includes(`/entry/${MOCK_TEAM_ID}/`));
     });
 
     it('?refresh=true bypasses the cache', async () => {
-      await admin.team();
-      mockFplApi();
+      await api.team();
+      resetFplMock();
 
-      const res = await admin.team({ refresh: true });
+      const res = await api.team({ refresh: true });
 
       assert.equal(res.status, 200);
       assert.equal(res.body.cache.fromCache, false);
@@ -156,41 +147,39 @@ describe('GET /api/team', () => {
     });
 
     it('does not cache failed fetches', async () => {
-      mockFplApi({ '/bootstrap-static/': { status: 503 } });
-      assert.equal((await admin.team()).status, 503);
+      fplFails('/bootstrap-static/', 503);
+      assert.equal((await api.team()).status, 503);
 
-      mockFplApi();
-      assert.equal((await admin.team()).body.cache.fromCache, false);
+      resetFplMock();
+      assert.equal((await api.team()).body.cache.fromCache, false);
     });
   });
 
   describe('errors', () => {
     it('returns 500 when no team ID is configured', async () => {
-      const res = await withTeamId(0, () => admin.team());
+      const res = await withTeamId(0, () => api.team());
       assert.equal(res.status, 500);
       assert.match(res.body.error!, /FPL_TEAM_ID/);
     });
 
     it('returns 404 for an unknown FPL team', async () => {
-      const res = await withTeamId(999, () => admin.team());
+      const res = await withTeamId(999, () => api.team());
       assert.equal(res.status, 404);
     });
 
     it('passes FPL outages through as 503 JSON errors', async () => {
-      mockFplApi({ [`/entry/${MOCK_TEAM_ID}/`]: { status: 503 } });
+      fplFails(`/entry/${MOCK_TEAM_ID}/`, 503);
 
-      const res = await admin.team();
+      const res = await api.team();
 
       assert.equal(res.status, 503);
       assert.match(res.body.error!, /updating/);
     });
 
     it('returns 404 when the team has no picks yet', async () => {
-      mockFplApi({
-        [`/entry/${MOCK_TEAM_ID}/`]: { status: 200, body: { id: MOCK_TEAM_ID, current_event: null, started_event: 1 } },
-      });
+      fplReturns(`/entry/${MOCK_TEAM_ID}/`, { id: MOCK_TEAM_ID, current_event: null, started_event: 1 });
 
-      const res = await admin.team();
+      const res = await api.team();
 
       assert.equal(res.status, 404);
       assert.match(res.body.error!, /no picks yet/);
