@@ -45,6 +45,18 @@ export const config = {
     priceWatchPerList: 8, // league-wide risers / fallers shown
   },
 
+  transfers: {
+    maxFreeTransfers: 5, // FPL banks up to 5
+    maxTransfers: 2, // searched exhaustively: 0, 1 or 2 per gameweek
+    hitCost: 4, // points per transfer beyond the free ones
+    maxPerClub: 3,
+    candidatesPerPosition: 30, // players considered for buying, per position
+    // Predicted points (over the horizon) a banked free transfer is worth next gameweek.
+    // A rule of thumb, not measured: a transfer is only suggested if it beats saving by this much.
+    savedTransferValue: 1.5,
+    optionsShown: 5, // per number of transfers
+  },
+
   auth: {
     // Single admin account (personal tool, see CONTEXT.md).
     username: env.adminUsername,

@@ -5,6 +5,7 @@ import { headToHeadRoutes } from './headToHead/routes.js';
 import { nextGameweekRoutes } from './nextGameweek/routes.js';
 import { projectionRoutes } from './projections/routes.js';
 import { teamRoutes } from './team/routes.js';
+import { transferRoutes } from './transfers/routes.js';
 
 export const router = Router();
 
@@ -17,6 +18,7 @@ router.use('/team', teamRoutes);
 router.use('/head-to-head', headToHeadRoutes);
 router.use('/projections', projectionRoutes);
 router.use('/next-gameweek', nextGameweekRoutes);
+router.use('/transfers', transferRoutes);
 
 // Unknown /api routes get JSON, not the SPA fallback.
 router.use((_req, res) => {

@@ -30,6 +30,7 @@ export interface FplElement {
   team: number;
   element_type: number;
   now_cost: number;
+  cost_change_start: number; // price change since the season started, tenths of £m
   form: string;
   points_per_game: string;
   total_points: number;
@@ -171,6 +172,29 @@ export interface FplElementHistory {
   expected_goals: string;
   expected_assists: string;
   defensive_contribution?: number;
+}
+
+/** /entry/{id}/history/: one row per gameweek played, plus the chips used. */
+export interface FplEntryHistoryResponse {
+  current: FplEntryHistory[];
+  chips: FplChipPlay[];
+}
+
+export interface FplChipPlay {
+  name: string; // "wildcard" | "freehit" | "bboost" | "3xc" | …
+  time: string;
+  event: number;
+}
+
+/** One transfer in /entry/{id}/transfers/ (newest first). Costs are tenths of £m. */
+export interface FplTransfer {
+  element_in: number;
+  element_in_cost: number;
+  element_out: number;
+  element_out_cost: number;
+  entry: number;
+  event: number;
+  time: string;
 }
 
 export interface FplElementSummary {

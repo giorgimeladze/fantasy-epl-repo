@@ -3,6 +3,7 @@ import { ROUTES, type Route } from '../hooks/useHashRoute.ts';
 const LINKS: Array<{ route: Route; label: string }> = [
   { route: 'team', label: 'My team' },
   { route: 'next-gameweek', label: 'Next GW' },
+  { route: 'transfers', label: 'Transfers' },
   { route: 'predictions', label: 'Predictions' },
   { route: 'head-to-head', label: 'Head-to-head' },
 ];

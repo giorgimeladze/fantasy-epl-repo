@@ -6,6 +6,7 @@ import type {
   NextGameweekResponse,
   ProjectionsResponse,
   ScoutOptionsResponse,
+  TransfersResponse,
 } from './types.ts';
 
 const TOKEN_KEY = 'fpl.token';
@@ -81,6 +82,10 @@ export const api = {
 
   getNextGameweek(forceRefresh = false): Promise<NextGameweekResponse> {
     return request<NextGameweekResponse>(forceRefresh ? '/next-gameweek?refresh=true' : '/next-gameweek');
+  },
+
+  getTransfers(forceRefresh = false): Promise<TransfersResponse> {
+    return request<TransfersResponse>(forceRefresh ? '/transfers?refresh=true' : '/transfers');
   },
 
   getProjections(forceRefresh = false): Promise<ProjectionsResponse> {

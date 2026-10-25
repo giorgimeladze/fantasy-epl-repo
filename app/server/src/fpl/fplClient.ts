@@ -1,5 +1,14 @@
 import { config } from '../config/index.js';
-import type { FplBootstrap, FplElementSummary, FplEntry, FplFixture, FplLive, FplPicks } from './models.js';
+import type {
+  FplBootstrap,
+  FplElementSummary,
+  FplEntry,
+  FplEntryHistoryResponse,
+  FplFixture,
+  FplLive,
+  FplPicks,
+  FplTransfer,
+} from './models.js';
 import { HttpError } from '../utils/http.js';
 
 interface CacheEntry {
@@ -51,6 +60,16 @@ export const fplClient = {
 
   getEntry(teamId: number): Promise<FplEntry> {
     return getCached(`/entry/${teamId}/`, config.fpl.liveCacheTtlMs);
+  },
+
+  /** Points, transfers and bank per gameweek played, plus chips used. */
+  getEntryHistory(teamId: number): Promise<FplEntryHistoryResponse> {
+    return getCached(`/entry/${teamId}/history/`, config.fpl.liveCacheTtlMs);
+  },
+
+  /** Every transfer the manager has made this season (only after each deadline). */
+  getTransfers(teamId: number): Promise<FplTransfer[]> {
+    return getCached(`/entry/${teamId}/transfers/`, config.fpl.liveCacheTtlMs);
   },
 
   getPicks(teamId: number, gameweek: number, finished: boolean): Promise<FplPicks> {

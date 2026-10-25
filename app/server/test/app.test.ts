@@ -34,6 +34,7 @@ describe('API', () => {
         await client.scoutPlayer(9),
         await client.projections(),
         await client.nextGameweek(),
+        await client.transfers(),
       ];
 
       for (const res of responses) {

@@ -2,7 +2,7 @@
 
 Express API, organised by feature. Each feature folder holds its routes, service, pure logic and API types:
 
-- `auth/`, `team/`, `headToHead/`, `projections/`, `nextGameweek/` — one per `/api/*` route group; each has a `routes.ts` mounted in `routes.ts` here.
+- `auth/`, `team/`, `headToHead/`, `projections/`, `nextGameweek/`, `transfers/` — one per `/api/*` route group; each has a `routes.ts` mounted in `routes.ts` here.
 - `fpl/` — the only code that talks to the FPL API, plus the raw FPL payload types.
 - `history/` — past seasons: downloading the CSVs and the `player_fixture_history` table.
 - `db/` — SQLite connection, migrations and the shared response cache.

@@ -2,7 +2,7 @@
 
 - **Written:** 2026-10-17
 - **Source:** review of [Fantasy Football Fix](https://www.fantasyfootballfix.com/) ([premium features](https://www.fantasyfootballfix.com/premium), [rotation tool](https://www.fantasyfootballfix.com/blog-index/go-head-head-our-new-fixture-rotation-tool/)) against this codebase.
-- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)); Phases 2 and 5 done ([spec 004](../specs/004-next-gameweek.md)). Phases 3–4 are backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
+- **Status:** Phase 1 done ([spec 003](../specs/003-predicted-points.md)); Phases 2 and 5 done ([spec 004](../specs/004-next-gameweek.md)); Phase 3 done ([spec 005](../specs/005-transfer-suggestions.md)). Phase 4 is backlog. When work starts on one, turn it into a numbered spec in [../specs/](../specs/) and link it here.
 
 The goal: recommendations for the **next gameweek**: who to start, bench and captain, and who to transfer in and out. Only free data (the FPL API and the vaastav history we already import).
 
@@ -50,15 +50,15 @@ FFFix does not say how its algorithms work, so treat this list as features to ta
 - [x] **Compare with your current picks:** "Start X instead of Y: +n", captain change and bench order. *Against the current GW's picks: FPL hides next GW's picks until the deadline.*
 - [x] **New "Next GW" page** (`#/next-gw`) with a reason line for every player.
 
-### Phase 3: Transfer suggestions
+### Phase 3: Transfer suggestions: done, see [spec 005](../specs/005-transfer-suggestions.md)
 
-- [ ] **Free transfers:** worked out from `/entry/{id}/history/` (`event_transfers` and chips per GW; banking up to 5).
-- [ ] **Selling prices:** estimated from `/entry/{id}/transfers/`: purchase price + half of any rise, rounded down to £0.1m. Avoid `/my-team`, which needs your FPL login.
-- [ ] **Rules:** budget (bank + selling price), max 3 players per club, position quotas.
-- [ ] **Search:** 0, 1 and 2 transfers, checked exhaustively over the top ~30 candidates per position by predicted points over 3–5 GWs. Fast enough without a solver.
-- [ ] **Hits:** suggest a −4 only if the predicted gain over the planning horizon beats 4 points.
-- [ ] **Show "save the transfer" as an option:** often the right call with banking.
-- [ ] **Output:** "Sell A → buy B, +X predicted points over 5 GWs, £Y left", with the breakdown (fixtures, form, availability, head-to-head).
+- [x] **Free transfers:** worked out from `/entry/{id}/history/` (`event_transfers` and chips per GW; banking up to 5). *Wildcard / Free Hit keep the count unchanged (no +1).*
+- [x] **Selling prices:** estimated from `/entry/{id}/transfers/`: purchase price + half of any rise, rounded down to £0.1m. Avoid `/my-team`, which needs your FPL login. *First-squad players use the season's starting price (`cost_change_start`).*
+- [x] **Rules:** budget (bank + selling price), max 3 players per club, position quotas.
+- [x] **Search:** 0, 1 and 2 transfers, checked exhaustively over the top ~30 candidates per position by predicted points over 3–5 GWs. Fast enough without a solver. *~0.4 s on the live league over 5 GWs.*
+- [x] **Hits:** suggest a −4 only if the predicted gain over the planning horizon beats 4 points.
+- [x] **Show "save the transfer" as an option:** often the right call with banking. *A banked transfer is valued at 1.5 points (rule of thumb, not measured).*
+- [x] **Output:** "Sell A → buy B, +X predicted points over 5 GWs, £Y left", with the breakdown (fixtures, form, availability, head-to-head).
 
 ### Phase 4: Planning ahead
 

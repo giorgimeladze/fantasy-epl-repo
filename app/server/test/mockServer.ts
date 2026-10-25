@@ -2,7 +2,9 @@
 // FPL API or to the past-season dataset is answered here, so tests never touch the network.
 //
 // The mock season: team 123456 has played GW1 (finished: Salah captain, Gvardiol auto-subbed
-// for Colwill) and GW2 (live: Isak swapped for Jackson, Haaland captain). GW3–5 are still to
+// for Colwill) and GW2 (live: Isak swapped for Jackson, Haaland captain), so 1 free transfer and
+// £0.5m in the bank for GW3. Arsenal has 6 of the squad (the 3-per-club rule is broken on purpose:
+// the mock league has only 4 clubs). GW3–5 are still to
 // play; Arsenal have a double and Man City a blank in GW5. Past seasons cover 2023-24 to 2025-26
 // (2022-23 is deliberately missing): Salah has 5 games against Arsenal (one at 0 minutes), Raya
 // changes club, and Haaland never meets his next opponent.
@@ -39,6 +41,7 @@ const POSITIONS = [{ id: 1, singular_name_short: 'GKP' }, { id: 2, singular_name
 /** Every player starts from these values; each entry in PLAYERS only lists what differs. */
 const DEFAULT_PLAYER = {
   now_cost: 60,
+  cost_change_start: 0,
   form: '4.0',
   points_per_game: '4.0',
   total_points: 8,
@@ -76,12 +79,12 @@ const PLAYERS: FplElement[] = [
   { ...DEFAULT_PLAYER, id: 5, code: 100005, web_name: 'Virgil', first_name: 'Virgil', second_name: 'van Dijk', team: 2, element_type: 2, event_points: 6, assists: 1, clean_sheets: 1, selected_by_percent: '15.5', expected_assists: '0.80', ep_next: '3.9' },
   { ...DEFAULT_PLAYER, id: 6, code: 100006, web_name: 'Gvardiol', first_name: 'Joško', second_name: 'Gvardiol', team: 3, element_type: 2, form: '1.0', points_per_game: '2.0', total_points: 2, minutes: 90, ict_index: '3.4', selected_by_percent: '18.6', status: 'd', news: 'Knock - 75% chance of playing', chance_of_playing_next_round: 75, starts: 1, ep_next: '2.6' },
   { ...DEFAULT_PLAYER, id: 7, code: 100007, web_name: 'Colwill', first_name: 'Levi', second_name: 'Colwill', team: 4, element_type: 2, now_cost: 45, form: '1.5', points_per_game: '1.5', total_points: 3, event_points: 1, minutes: 160, ict_index: '5.1', selected_by_percent: '21.7', ep_next: '3.1' },
-  { ...DEFAULT_PLAYER, id: 8, code: 100008, web_name: 'Saka', first_name: 'Bukayo', second_name: 'Saka', team: 1, element_type: 3, now_cost: 100, event_points: 3, minutes: 170, assists: 1, selected_by_percent: '24.8', expected_assists: '0.80', defensive_contribution: 14, ep_next: '5.2', cost_change_event: 1, transfers_in_event: 52000, transfers_out_event: 3000, price_change_percent: '84.0', price_change_projections: [{ offset: 0, projected_percent: '96.0', likelihood: 4 }, { offset: 1, projected_percent: '144.0', likelihood: 5 }, { offset: 2, projected_percent: '192.0', likelihood: 5 }] },
+  { ...DEFAULT_PLAYER, id: 8, code: 100008, web_name: 'Saka', first_name: 'Bukayo', second_name: 'Saka', team: 1, element_type: 3, now_cost: 100, cost_change_start: 3, event_points: 3, minutes: 170, assists: 1, selected_by_percent: '24.8', expected_assists: '0.80', defensive_contribution: 14, ep_next: '5.2', cost_change_event: 1, transfers_in_event: 52000, transfers_out_event: 3000, price_change_percent: '84.0', price_change_projections: [{ offset: 0, projected_percent: '96.0', likelihood: 4 }, { offset: 1, projected_percent: '144.0', likelihood: 5 }, { offset: 2, projected_percent: '192.0', likelihood: 5 }] },
   { ...DEFAULT_PLAYER, id: 9, code: 100009, web_name: 'M.Salah', first_name: 'Mohamed', second_name: 'Salah', team: 2, element_type: 3, now_cost: 145, form: '8.5', points_per_game: '8.5', total_points: 17, event_points: 5, goals_scored: 2, assists: 1, bonus: 3, ict_index: '28.9', selected_by_percent: '27.9', expected_goals: '1.80', expected_assists: '0.80', defensive_contribution: 14, ep_next: '6.8' },
   { ...DEFAULT_PLAYER, id: 10, code: 100010, web_name: 'Foden', first_name: 'Phil', second_name: 'Foden', team: 3, element_type: 3, now_cost: 85, form: '2.5', points_per_game: '2.5', total_points: 5, minutes: 150, ict_index: '8.5', selected_by_percent: '31.0', defensive_contribution: 14, ep_next: '4.6' },
-  { ...DEFAULT_PLAYER, id: 11, code: 100011, web_name: 'Palmer', first_name: 'Cole', second_name: 'Palmer', team: 4, element_type: 3, now_cost: 105, form: '8.5', points_per_game: '8.5', total_points: 17, event_points: 10, goals_scored: 2, assists: 2, bonus: 3, ict_index: '28.9', selected_by_percent: '34.1', expected_goals: '1.80', expected_assists: '1.60', defensive_contribution: 14, ep_next: '5.9' },
+  { ...DEFAULT_PLAYER, id: 11, code: 100011, web_name: 'Palmer', first_name: 'Cole', second_name: 'Palmer', team: 4, element_type: 3, now_cost: 105, cost_change_start: -1, form: '8.5', points_per_game: '8.5', total_points: 17, event_points: 10, goals_scored: 2, assists: 2, bonus: 3, ict_index: '28.9', selected_by_percent: '34.1', expected_goals: '1.80', expected_assists: '1.60', defensive_contribution: 14, ep_next: '5.9' },
   { ...DEFAULT_PLAYER, id: 12, code: 100012, web_name: 'Rice', first_name: 'Declan', second_name: 'Rice', team: 1, element_type: 3, now_cost: 65, form: '3.0', points_per_game: '3.0', total_points: 6, assists: 1, clean_sheets: 1, ict_index: '10.2', selected_by_percent: '37.2', expected_assists: '0.80', yellow_cards: 1, defensive_contribution: 14, ep_next: '4.2', transfers_in_event: 800, transfers_out_event: 9000, price_change_percent: '-12.0', price_change_projections: [{ offset: 0, projected_percent: '-15.0', likelihood: -1 }, { offset: 1, projected_percent: '-22.5', likelihood: -1 }, { offset: 2, projected_percent: '-30.0', likelihood: -2 }] },
-  { ...DEFAULT_PLAYER, id: 13, code: 100013, web_name: 'Haaland', first_name: 'Erling', second_name: 'Haaland', team: 3, element_type: 4, now_cost: 150, form: '11.0', points_per_game: '11.0', total_points: 22, event_points: 13, goals_scored: 3, bonus: 3, ict_index: '37.4', selected_by_percent: '40.3', expected_goals: '2.70', defensive_contribution: 4, ep_next: '7.4', transfers_in_event: 60000, price_change_projections: [{ offset: 0, projected_percent: '0.0', likelihood: 5 }, { offset: 1, projected_percent: '0.0', likelihood: 5 }, { offset: 2, projected_percent: '0.0', likelihood: 5 }], price_change_locked_until: '2099-01-01T00:00:00Z' },
+  { ...DEFAULT_PLAYER, id: 13, code: 100013, web_name: 'Haaland', first_name: 'Erling', second_name: 'Haaland', team: 3, element_type: 4, now_cost: 150, cost_change_start: 4, form: '11.0', points_per_game: '11.0', total_points: 22, event_points: 13, goals_scored: 3, bonus: 3, ict_index: '37.4', selected_by_percent: '40.3', expected_goals: '2.70', defensive_contribution: 4, ep_next: '7.4', transfers_in_event: 60000, price_change_projections: [{ offset: 0, projected_percent: '0.0', likelihood: 5 }, { offset: 1, projected_percent: '0.0', likelihood: 5 }, { offset: 2, projected_percent: '0.0', likelihood: 5 }], price_change_locked_until: '2099-01-01T00:00:00Z' },
   { ...DEFAULT_PLAYER, id: 14, code: 100014, web_name: 'N.Jackson', first_name: 'Nicolas', second_name: 'Jackson', team: 4, element_type: 4, now_cost: 75, form: '2.0', points_per_game: '2.0', total_points: 4, minutes: 170, ict_index: '6.8', selected_by_percent: '43.4', defensive_contribution: 4, ep_next: '4.3' },
   { ...DEFAULT_PLAYER, id: 15, code: 100015, web_name: 'Havertz', first_name: 'Kai', second_name: 'Havertz', team: 1, element_type: 4, now_cost: 75, form: '3.0', points_per_game: '3.0', total_points: 6, event_points: 0, minutes: 120, goals_scored: 1, ict_index: '10.2', selected_by_percent: '46.5', expected_goals: '0.90', status: 'i', news: 'Hamstring injury - Unknown return date', chance_of_playing_next_round: 0, starts: 1, defensive_contribution: 4, ep_next: '0.0', transfers_in_event: 900, transfers_out_event: 41000, price_change_percent: '-61.0', price_change_projections: [{ offset: 0, projected_percent: '-70.0', likelihood: -2 }, { offset: 1, projected_percent: '-105.0', likelihood: -3 }, { offset: 2, projected_percent: '-140.0', likelihood: -4 }] },
   { ...DEFAULT_PLAYER, id: 16, code: 100016, web_name: 'Isak', first_name: 'Alexander', second_name: 'Isak', team: 2, element_type: 4, now_cost: 90, form: '1.0', points_per_game: '2.0', total_points: 2, event_points: 0, minutes: 60, ict_index: '3.4', selected_by_percent: '4.2', starts: 1, defensive_contribution: 4, ep_next: '3.0', transfers_in_event: 38000, transfers_out_event: 2500, price_change_percent: '71.0', price_change_projections: [{ offset: 0, projected_percent: '88.0', likelihood: 3 }, { offset: 1, projected_percent: '132.0', likelihood: 4 }, { offset: 2, projected_percent: '176.0', likelihood: 5 }] },
@@ -128,6 +131,16 @@ const PICKS: Record<number, ReturnType<typeof picks>> = {
     { event: 2, points: 60, total_points: 134, rank: 250000, bank: 5, value: 1002, event_transfers: 1, event_transfers_cost: 0, points_on_bench: 3 },
   ),
 };
+
+/** /entry/{id}/history/: the gameweeks played (same rows as the picks' entry_history), no chips. */
+function entryHistory() {
+  return { current: Object.values(PICKS).map((p) => p.entry_history), past: [], chips: [] };
+}
+
+/** /entry/{id}/transfers/, newest first: Isak out for N.Jackson before GW2 (Jackson has risen since). */
+const TRANSFERS = [
+  { element_in: idOf('N.Jackson'), element_in_cost: 72, element_out: idOf('Isak'), element_out_cost: 80, entry: 123456, event: 2, time: '2026-08-20T18:00:00Z' },
+];
 
 /** Points and minutes per player in each gameweek. */
 const LIVE: Record<number, Record<string, [points: number, minutes: number]>> = {
@@ -236,6 +249,8 @@ const notFound = () => HttpResponse.json({ detail: 'Not found.' }, { status: 404
 export const mockServer = setupServer(
   http.get(`${FPL}/bootstrap-static/`, () => HttpResponse.json(bootstrap())),
   http.get(`${FPL}/entry/${MOCK_TEAM_ID}/`, () => HttpResponse.json(ENTRY)),
+  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/history/`, () => HttpResponse.json(entryHistory())),
+  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/transfers/`, () => HttpResponse.json(TRANSFERS)),
   http.get(`${FPL}/entry/${MOCK_TEAM_ID}/event/:gameweek/picks/`, ({ params }) => {
     const gameweekPicks = PICKS[Number(params.gameweek)];
     return gameweekPicks ? HttpResponse.json(gameweekPicks) : notFound();

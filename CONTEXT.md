@@ -24,6 +24,8 @@ Base URL: `https://fantasy.premierleague.com/api`
 | --- | --- |
 | `/bootstrap-static/` | All players (`elements`), clubs (`teams`), gameweeks (`events`), positions (`element_types`) |
 | `/entry/{teamId}/` | Manager info, overall points/rank, `current_event`, `started_event` |
+| `/entry/{teamId}/history/` | Points, transfers made and bank per gameweek, plus chips used (free transfers) |
+| `/entry/{teamId}/transfers/` | Every transfer with prices (selling prices); only shows transfers after each deadline |
 | `/entry/{teamId}/event/{gw}/picks/` | The 15 picks for a GW, multipliers, captaincy, chip, autosubs, bank/value |
 | `/event/{gw}/live/` | Points each player scored in a GW |
 | `/fixtures/?future=1` | Upcoming fixtures with FDR |
@@ -84,12 +86,24 @@ For each squad player: the opponent in their club's next fixture, and the player
 - **Price watch:** FPL's own (undocumented) `price_change_projections` on `bootstrap-static`: a likelihood from −5 to 5 for each of the next price updates (offset 0 = tonight), plus `price_change_percent` (progress to the change) and `price_change_locked_until`. |likelihood| ≥ 3 is "likely", 2 "possible"; locked prices are skipped.
 - **Differentials:** players outside the squad owned by under 10% (`selected_by_percent`), top 5 per position by predicted points over the next 5 gameweeks (computed in `projections/`).
 
+## Transfers
+
+`transfers/` suggests the best 0, 1 or 2 transfers for the next gameweek (`/api/transfers`, the Transfers page). Details in [spec 005](docs/specs/005-transfer-suggestions.md).
+
+- **Free transfers** are replayed from `/entry/{id}/history/`: the first squad is free, then +1 each gameweek after subtracting the transfers made (never below 0 before the +1), banked up to 5. A Wildcard or Free Hit keeps the count as it was, with no +1 that week.
+- **Selling prices:** purchase price from the latest `/entry/{id}/transfers/` row bringing the player in (Free Hit weeks ignored); first-squad players use the season's starting price (`now_cost − cost_change_start`). Selling price = purchase + half of any rise, rounded down to £0.1m; falls are passed on in full. `/my-team` (exact values) needs the FPL login, so it isn't used.
+- **Candidates:** per position, players outside the squad that the most money a sale could free can afford, skipping anyone beaten on both price and points by 3 others, then the top 30 by predicted points over the horizon.
+- **Search:** every 1-transfer and 2-transfer combination (like for like, budget = bank + selling prices, max 3 per club for the incoming clubs).
+- **Squad score:** the predicted points over the horizon (5 GWs). Each GW counts the greedy best XI (best keeper, 3 DEF / 2 MID / 1 FWD, then the 4 best outfielders), the armband and the expected automatic substitutions, using the Next GW functions.
+- **Choice:** `score = gain − 4 × transfers beyond the free ones − 1.5 × (free transfers given up next week)`. Saving scores 0. With 5 banked, one transfer gives nothing up.
+- **Pairs** are only listed when they gain more than either move alone.
+
 ## Caching
 
 Three layers on the server:
 
 1. **Past-season history** (`player_fixture_history`): permanent; seasons never change.
-2. **SQLite response cache** (`response_cache` table, `app/server/data/fpl.sqlite`): each page's assembled response is stored with its fetch time (keys `team:<teamId>`, `head-to-head:<teamId>`, `head-to-head:player:<id>`, `projections:<teamId>`, `next-gameweek:<teamId>`). Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (each page's Refresh button) bypasses it. Failed fetches are never cached.
+2. **SQLite response cache** (`response_cache` table, `app/server/data/fpl.sqlite`): each page's assembled response is stored with its fetch time (keys `team:<teamId>`, `head-to-head:<teamId>`, `head-to-head:player:<id>`, `projections:<teamId>`, `next-gameweek:<teamId>`, `transfers:<teamId>`). Requests within 30 minutes are answered from the DB without contacting FPL. `?refresh=true` (each page's Refresh button) bypasses it. Failed fetches are never cached.
 3. **In-memory FPL response cache** (`fplClient`): finished-gameweek picks/live data for 24 h, everything else for 2 minutes. Speeds up a refetch (only the current gameweek is re-downloaded in practice) and is lost on restart.
 
 ## Testing approach

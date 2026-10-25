@@ -7,6 +7,7 @@ import { HeadToHeadPage } from './pages/HeadToHeadPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { NextGameweekPage } from './pages/NextGameweekPage.tsx';
 import { PredictionsPage } from './pages/PredictionsPage.tsx';
+import { TransfersPage } from './pages/TransfersPage.tsx';
 
 export function App() {
   const [token, setToken] = useState<string | null>(() => tokenStore.get());
@@ -37,6 +38,8 @@ export function App() {
           <HeadToHeadPage key="head-to-head" onUnauthorized={handleSessionEnd} />
         ) : route === 'next-gameweek' ? (
           <NextGameweekPage key="next-gameweek" onUnauthorized={handleSessionEnd} />
+        ) : route === 'transfers' ? (
+          <TransfersPage key="transfers" onUnauthorized={handleSessionEnd} />
         ) : route === 'predictions' ? (
           <PredictionsPage key="predictions" onUnauthorized={handleSessionEnd} />
         ) : (

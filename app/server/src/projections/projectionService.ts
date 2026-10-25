@@ -192,7 +192,8 @@ function projectAll(
   return result;
 }
 
-async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<ProjectionsSnapshot> {
+/** Every player's projection for the upcoming gameweeks, with the manager's team they were built for. */
+async function projectLeague(teamId: number, forceRefresh: boolean) {
   const [team, bootstrap, fixtures] = await Promise.all([
     teamService.getMyTeam(teamId, { forceRefresh }),
     fplClient.getBootstrap(),
@@ -218,6 +219,11 @@ async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<Pro
     },
     pickPositions,
   );
+  return { team, gameweeks, projections };
+}
+
+async function buildSnapshot(teamId: number, forceRefresh: boolean): Promise<ProjectionsSnapshot> {
+  const { team, gameweeks, projections } = await projectLeague(teamId, forceRefresh);
 
   const squad = team.players.flatMap((p) => projections.get(p.id) ?? []);
   const everyone = [...projections.values()];
@@ -256,5 +262,17 @@ export const projectionService = {
     return cachedResponse(`projections:${teamId}`, config.db.cacheTtlMs, forceRefresh, () =>
       buildSnapshot(teamId, forceRefresh),
     );
+  },
+
+  /**
+   * Every player in the game (by element id), not cached: for features that search the whole league,
+   * such as transfers. FPL responses still come from fplClient's memory cache.
+   */
+  async getLeagueProjections(
+    teamId: number = config.fpl.teamId,
+    { forceRefresh = false }: { forceRefresh?: boolean } = {},
+  ): Promise<{ gameweeks: number[]; players: Map<number, PlayerProjection> }> {
+    const { gameweeks, projections } = await projectLeague(teamId, forceRefresh);
+    return { gameweeks, players: projections };
   },
 };
