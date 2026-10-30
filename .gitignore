@@ -4,3 +4,6 @@ dist/
 .DS_Store
 *.log
 app/server/data/
+.terraform/
+*.tfstate*
+*.tfvars
