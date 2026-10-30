@@ -15,6 +15,7 @@ Each major update to the codebase gets its own spec: what needs to be done, what
 | 005 | [Transfer suggestions](005-transfer-suggestions.md) | Done |
 | 006 | [Planner and explained numbers](006-planner.md) | Done |
 | 007 | [Structure cleanup, linting and agent guides](007-structure-cleanup.md) | Done |
+| 008 | [Production deployment (Lightsail, Terraform, GitHub Actions)](008-production-deployment.md) | Draft |
 
 ## Conventions
 
