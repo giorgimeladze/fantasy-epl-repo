@@ -33,3 +33,8 @@ variable "ssh_public_key_path" {
   type        = string
   default     = "~/.ssh/fantasy-epl.pub"
 }
+
+variable "domain" {
+  type    = string
+  default = "fantasy-epl-gio.duckdns.org"
+}

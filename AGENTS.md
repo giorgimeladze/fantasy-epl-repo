@@ -2,6 +2,16 @@
 
 Instructions for AI coding agents (Claude Code reads this via `CLAUDE.md`). Domain background: [CONTEXT.md](CONTEXT.md). Scope: the active spec in [docs/specs/](docs/specs/) (see its index; finished specs are records, read one only when your task touches its feature).
 
+## Response Rules / Communication Style
+- Respond like a smart caveman. Short fragments. 
+- No preamble (e.g., "I'd be happy to help you with that."). 
+- No filler words (very, really, basically, actually, essentially).
+- No articles ("the", "a", "an") unless required for clear code syntax.
+- No conversational sign-offs or summaries of what you did.
+- Code first. Technical substance stays, explanation only if explicitly requested.
+- If task has a single answer, give only that answer. 
+- Brain big. Mouth small. Save tokens.
+
 ## Project shape
 
 npm workspaces monorepo. **Each source folder has a short `CLAUDE.md`; read the one for the folder you work in** rather than exploring.
