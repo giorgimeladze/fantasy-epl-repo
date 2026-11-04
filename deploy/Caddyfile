@@ -1,0 +1,18 @@
+# Caddy config: HTTPS for the domain, everything forwarded to the app on port 3001.
+# Installed to /etc/caddy/Caddyfile by deploy/release.sh, which replaces DOMAIN_PLACEHOLDER
+# with the domain (infra/prod `var.domain`). Caddy gets and renews the Let's Encrypt
+# certificate itself and redirects http:// to https://.
+#   logs:   journalctl -u caddy -f
+#   reload: sudo systemctl reload caddy
+DOMAIN_PLACEHOLDER {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:3001
+}

@@ -1,0 +1,48 @@
+# systemd unit for the API (which also serves the built client). Installed to
+# /etc/systemd/system/ by deploy/release.sh; Caddy proxies the domain to port 3001.
+#   logs:    journalctl -u fantasy-epl -f
+#   restart: sudo systemctl restart fantasy-epl
+[Unit]
+Description=Fantasy EPL dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=fpl
+Group=fpl
+# `current` is a symlink to the active release in /opt/fantasy-epl/releases/.
+WorkingDirectory=/opt/fantasy-epl/current/app/server
+# NODE_ENV=production, PORT, DATABASE_PATH and the secrets; written on every deploy.
+EnvironmentFile=/etc/fantasy-epl/env
+# node directly, not `npm start`: that also reads ../../.env and adds an npm process.
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning dist/server.js
+Restart=on-failure
+RestartSec=2
+
+# Hardening: read-only system, writes only to the database folder (SQLite also needs the
+# folder itself writable for its -wal/-shm files). No MemoryDenyWriteExecute: V8's JIT needs it.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/fantasy-epl
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+# Port 3001 is above 1024, so no capabilities needed; network is IPv4/IPv6 (FPL API) + Unix.
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
