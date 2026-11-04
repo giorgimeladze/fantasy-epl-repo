@@ -6,7 +6,7 @@
 
 ## Progress
 
-Last checked 2026-11-04 (after Phase 3).
+Last checked 2026-11-04 (after Phase 4).
 
 **Done**
 - [x] Phase 0: IAM permissions, SSH key `~/.ssh/fantasy-epl`, `.gitignore`
@@ -15,10 +15,20 @@ Last checked 2026-11-04 (after Phase 3).
 - [x] Committed: `4da8675` (Terraform + instance)
 
 **Open, in order**
-- [ ] **Phase 2.5, firewall drift:** `terraform plan` still says `1 to add, 1 to destroy` (`main.tf` has no `ipv6_cidrs`/`cidr_list_aliases`). Fix, apply, then `plan` → No changes
+- [x] **Phase 2.5, firewall drift:** all `port_info` fields explicit (IPv4 only), applied; `plan` → No changes
 - [ ] Commit this roadmap (`docs/tasks/deployment-roadmap.md` is untracked)
-- [x] **Phase 3:** `fantasy-epl-gio.duckdns.org` → `13.61.248.179` (dig ok, http 200); `variable "domain"` + `output "url"` added (not committed yet)
-- [ ] Phase 4: `deploy/` (systemd unit, Caddyfile, `release.sh`) + first deploy by hand. No `deploy/` folder yet
+- [x] **Phase 3:** `fantasy-epl-gio.duckdns.org` → `13.61.248.179` (dig ok, http 200); `variable "domain"` + `output "url"` added
+- [x] Phase 4.1: only writes are `DATABASE_PATH` + its `-wal`/`-shm` siblings (`db/database.ts`); nothing else on disk
+- [x] Phase 4.2: `deploy/fantasy-epl.service`. `systemd-analyze verify` clean, security exposure 2.9 OK. Not installed yet (`release.sh` does that)
+- [x] Phase 4.3: `deploy/Caddyfile` (`caddy validate` ok on the server)
+- [x] Phase 4.4: `deploy/production.env.example` (template; real file created on the server by hand)
+- [x] Phase 4.5: build flow tested: `git archive` into a temp dir → `npm ci` → check → build → `npm ci --omit=dev -w app/server` (3.8 MB) → tar
+- [x] Phase 4.4 (server): `/etc/fantasy-epl/env` created by hand
+- [x] Phase 4.6: `deploy/release.sh` (syntax checked; not run yet)
+- [x] FPL API reachable from the server (200)
+- [x] Phase 4.7: release `b490f21` deployed by hand; live at https://fantasy-epl-gio.duckdns.org (Let's Encrypt cert, http → 308 redirect, security headers)
+- [x] Phase 4.8: login + every page's API 200; history import (4 seasons) ok; peak node RSS 134 MB, swap 146 MB, 0 restarts on `nano_3_0`; back by itself ~20 s after reboot
+- First attempt failed: `release.sh` was staged but not committed, so the tarball (built from `HEAD` by `git archive`) didn't contain it, `release.sh` wasn't found, and Caddy kept its default `:80` config (→ "refused to connect" on https). **Commit before building.**
 - [ ] Phase 5: `.github/workflows/ci.yml`. No `.github/` yet
 - [ ] Phase 6: `deploy.yml` + GitHub `production` environment
 - [ ] Phase 7: `infra/bootstrap/` (bucket, OIDC, roles) + state migration
@@ -36,9 +46,9 @@ Last checked 2026-11-04 (after Phase 3).
 | --- | --- | --- | --- | --- |
 | 0 | Preparation | Laptop, AWS console | `plan` can talk to Lightsail | Done |
 | 1 | Lightsail server in Terraform | Laptop | SSH into a bare Ubuntu server | Done |
-| 2 | First-boot setup (`user_data`) | Laptop | Node, Caddy, swap, user, folders, all automatic | Done, firewall fix left |
+| 2 | First-boot setup (`user_data`) | Laptop | Node, Caddy, swap, user, folders, all automatic | Done |
 | 3 | Domain (DuckDNS) | duckdns.org, laptop | The domain resolves to the static IP | Done |
-| 4 | First deploy by hand | Laptop → server | The app is live over HTTPS | |
+| 4 | First deploy by hand | Laptop → server | The app is live over HTTPS | Done |
 | 5 | CI checks on pull requests | GitHub | Every PR is linted, typechecked, tested, built | |
 | 6 | App deploy workflow | GitHub | Push to `master` → checks → live | |
 | 7 | State bucket + GitHub login to AWS | Laptop | State in S3, GitHub can log into AWS | |
