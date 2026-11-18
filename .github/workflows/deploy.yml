@@ -32,6 +32,21 @@ jobs:
       SHA: ${{ github.sha }}
       DOMAIN: ${{ vars.DOMAIN }}
     steps:
+      # A missing variable or secret reaches the job as "", so name each missing one up front.
+      - name: Check production settings
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          SSH_KNOWN_HOSTS: ${{ vars.SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          missing=0
+          for name in DEPLOY_HOST DOMAIN SSH_KNOWN_HOSTS DEPLOY_SSH_KEY ADMIN_USERNAME ADMIN_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::$name is empty: add it to the 'production' environment"; missing=1; fi
+          done
+          exit $missing
+
       - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v5
