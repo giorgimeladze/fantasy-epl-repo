@@ -1,0 +1,113 @@
+# Every push to master (= every merged PR): checks, then deploy to the Lightsail server.
+# "Run workflow" (workflow_dispatch) re-deploys the latest master, e.g. after changing a secret.
+# Needs the GitHub environment `production` (docs/tasks/deployment-roadmap.md, Phase 6).
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer push waits instead of cancelling a deploy halfway.
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to production
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://${{ vars.DOMAIN }}
+    env:
+      SHA: ${{ github.sha }}
+      DOMAIN: ${{ vars.DOMAIN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # Same layout as the hand-built release (roadmap Phase 4.5). The paths matter:
+      # app/server/dist/app.js finds the client at ../../client/dist.
+      - name: Build release tarball
+        run: |
+          npm ci
+          npm run build
+          npm ci --omit=dev -w app/server # runtime deps only
+          paths="package.json package-lock.json node_modules app/server/package.json app/server/dist app/client/dist deploy"
+          if [ -d app/server/node_modules ]; then paths="$paths app/server/node_modules"; fi
+          tar -czf "$RUNNER_TEMP/release.tar.gz" $paths
+          du -h "$RUNNER_TEMP/release.tar.gz"
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ vars.SSH_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # Pinned host key: an unknown or changed key stops the deploy.
+          cat > ~/.ssh/config <<EOF
+          Host prod
+            HostName $DEPLOY_HOST
+            User ubuntu
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 15
+          EOF
+          ssh prod true
+
+      - name: Upload and unpack release
+        run: |
+          scp -q "$RUNNER_TEMP/release.tar.gz" "prod:/tmp/fantasy-epl-$SHA.tar.gz"
+          ssh prod bash -s -- "$SHA" <<'EOF'
+          set -euo pipefail
+          sha=$1
+          releases=/opt/fantasy-epl/releases
+          tarball=/tmp/fantasy-epl-$sha.tar.gz
+          if [ -d "$releases/$sha" ]; then
+            echo "Release $sha already on the server (re-deploy)"
+          else
+            # Unpack beside it, then rename: a half-unpacked release is never used.
+            rm -rf "$releases/.$sha.tmp"
+            mkdir "$releases/.$sha.tmp"
+            tar -xzf "$tarball" -C "$releases/.$sha.tmp"
+            mv "$releases/.$sha.tmp" "$releases/$sha"
+          fi
+          rm -f "$tarball"
+          EOF
+
+      # Secrets reach the server only through the step's env and ssh stdin, never the command
+      # text. release.sh installs the file and puts the old one back if the release is unhealthy.
+      - name: Write env file and activate release
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
+        run: |
+          for v in "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID"; do
+            case "$v" in *$'\n'*) echo "A production secret contains a newline" >&2; exit 1 ;; esac
+          done
+          printf 'NODE_ENV=production\nPORT=3001\nDATABASE_PATH=/var/lib/fantasy-epl/fpl.sqlite\nADMIN_USERNAME=%s\nADMIN_PASSWORD=%s\nFPL_TEAM_ID=%s\n' \
+            "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID" \
+            | ssh prod 'umask 077 && cat > /tmp/fantasy-epl.env'
+          ssh prod "bash /opt/fantasy-epl/releases/$SHA/deploy/release.sh $SHA $DOMAIN /tmp/fantasy-epl.env"
+
+      - name: Health check over HTTPS
+        run: curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "https://$DOMAIN/api/health"

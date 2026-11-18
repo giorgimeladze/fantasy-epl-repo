@@ -6,7 +6,7 @@
 
 ## Progress
 
-Last checked 2026-11-04 (after Phase 4).
+Last checked 2026-11-18 (after Phase 5).
 
 **Done**
 - [x] Phase 0: IAM permissions, SSH key `~/.ssh/fantasy-epl`, `.gitignore`
@@ -29,8 +29,8 @@ Last checked 2026-11-04 (after Phase 4).
 - [x] Phase 4.7: release `b490f21` deployed by hand; live at https://fantasy-epl-gio.duckdns.org (Let's Encrypt cert, http → 308 redirect, security headers)
 - [x] Phase 4.8: login + every page's API 200; history import (4 seasons) ok; peak node RSS 134 MB, swap 146 MB, 0 restarts on `nano_3_0`; back by itself ~20 s after reboot
 - First attempt failed: `release.sh` was staged but not committed, so the tarball (built from `HEAD` by `git archive`) didn't contain it, `release.sh` wasn't found, and Caddy kept its default `:80` config (→ "refused to connect" on https). **Commit before building.**
-- [ ] Phase 5: `.github/workflows/ci.yml` written (app + Terraform jobs pass on a clean checkout); left: test PR, branch protection
-- [ ] Phase 6: `deploy.yml` + GitHub `production` environment
+- [x] Phase 5: `.github/workflows/ci.yml` (jobs `App (lint, typecheck, test, build)`, `Terraform (fmt, validate)`), green on PR #1 (merged). Ruleset `master` active: PR required, both checks required, no force push, no deletion. **From now on every change to `master` goes through a PR.**
+- [ ] Phase 6: `deploy.yml` written; `release.sh` takes the env file as 3rd arg and restores it on rollback. Left: `production` environment, merge, rollback test
 - [ ] Phase 7: `infra/bootstrap/` (bucket, OIDC, roles) + state migration
 - [ ] Phase 8: Terraform plan/apply in CI
 - [ ] Phase 9: optional extras
@@ -49,7 +49,7 @@ Last checked 2026-11-04 (after Phase 4).
 | 2 | First-boot setup (`user_data`) | Laptop | Node, Caddy, swap, user, folders, all automatic | Done |
 | 3 | Domain (DuckDNS) | duckdns.org, laptop | The domain resolves to the static IP | Done |
 | 4 | First deploy by hand | Laptop → server | The app is live over HTTPS | Done |
-| 5 | CI checks on pull requests | GitHub | Every PR is linted, typechecked, tested, built | |
+| 5 | CI checks on pull requests | GitHub | Every PR is linted, typechecked, tested, built | Done |
 | 6 | App deploy workflow | GitHub | Push to `master` → checks → live | |
 | 7 | State bucket + GitHub login to AWS | Laptop | State in S3, GitHub can log into AWS | |
 | 8 | Terraform in CI | GitHub | Changing `infra/` and pushing updates AWS | |
@@ -165,7 +165,7 @@ Everything here goes in a new `deploy/` folder. Phase 6 runs these same files fr
 
 Done when the app works over HTTPS after a reboot.
 
-## Phase 5: CI checks on pull requests
+## Phase 5: CI checks on pull requests (done)
 
 1. **`.github/workflows/ci.yml`:**
    - Triggers: `pull_request`, plus `workflow_call` so the deploy workflow can reuse it.
@@ -188,19 +188,21 @@ Done when a PR shows green checks, and a broken one can't be merged.
    | Variable | `DOMAIN` | `<name>.duckdns.org` |
    | Variable | `SSH_KNOWN_HOSTS` | output of `ssh-keyscan -t ed25519 13.61.248.179` |
 
-   Pinning the host key means GitHub refuses to deploy to an impostor. **Update it whenever the instance is rebuilt.**
+   Pinning the host key means GitHub refuses to deploy to an impostor. **Update it whenever the instance is rebuilt.** Check it before saving: the fingerprint of `ssh-keyscan` output (`ssh-keygen -lf`) must match `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` run on the server.
+
+   Environment settings: **Deployment branches → Selected branches → `master`**, so no other branch gets these secrets. Secrets must be one line, without quotes or backslashes (systemd's `EnvironmentFile` interprets those).
 2. **`.github/workflows/deploy.yml`:**
-   - Triggers: `push` to `master`, plus `workflow_dispatch` (re-deploy, e.g. after changing a secret)
+   - Triggers: `push` to `master` (every merged PR), plus `workflow_dispatch` ("Run workflow": re-deploy the latest `master`, e.g. after changing a secret)
    - `concurrency: { group: production, cancel-in-progress: false }`
    - Job `check`: `uses: ./.github/workflows/ci.yml`
    - Job `deploy`, with `needs: check` and `environment: production`:
      1. Build the tarball as in Phase 4.5.
-     2. Write the SSH key and `known_hosts` to `~/.ssh`.
-     3. `scp` the tarball.
-     4. Write `/etc/fantasy-epl/env` over SSH with `sudo tee`. Pass secrets as `env:` on the step, never inside the command text, so they stay masked in the logs.
-     5. Run `release.sh`.
+     2. Write the SSH key, `known_hosts` and an `ssh` host alias `prod` (`StrictHostKeyChecking yes`).
+     3. `scp` the tarball; unpack into `releases/.<sha>.tmp`, then rename to `releases/<sha>` (skipped when it already exists, i.e. a re-deploy).
+     4. Build the env file from secrets (passed as step `env:`, never in the command text) and pipe it over `ssh` to `/tmp/fantasy-epl.env` (mode 600).
+     5. Run `release.sh <sha> <domain> /tmp/fantasy-epl.env`: it installs the env file (old one kept as `env.prev`), activates, and on a failed health check restores both the previous release and the previous env file.
      6. From the runner: `curl -fsS https://$DOMAIN/api/health`.
-3. Test it: push a small visible change, watch it go live; then push a broken health check (e.g. a bad env value) and confirm the rollback keeps the old version running.
+3. Test it: merge a small visible change, watch it go live. Then test the rollback: delete the `FPL_TEAM_ID` secret (a missing secret reaches the workflow as an empty string, and `production.ts` refuses to start without it; GitHub doesn't allow an empty value, and a space would pass), "Run workflow", and confirm the job fails with `Rolling back` + `Rollback healthy` while the site stays up. Restore the secret and run it again.
 
 Done when a push to `master` deploys with no manual steps, and a bad deploy rolls back.
 
