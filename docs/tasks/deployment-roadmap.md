@@ -16,7 +16,7 @@ Last checked 2026-11-04 (after Phase 4).
 
 **Open, in order**
 - [x] **Phase 2.5, firewall drift:** all `port_info` fields explicit (IPv4 only), applied; `plan` → No changes
-- [ ] Commit this roadmap (`docs/tasks/deployment-roadmap.md` is untracked)
+- [x] Commit this roadmap (in `57f46f5`)
 - [x] **Phase 3:** `fantasy-epl-gio.duckdns.org` → `13.61.248.179` (dig ok, http 200); `variable "domain"` + `output "url"` added
 - [x] Phase 4.1: only writes are `DATABASE_PATH` + its `-wal`/`-shm` siblings (`db/database.ts`); nothing else on disk
 - [x] Phase 4.2: `deploy/fantasy-epl.service`. `systemd-analyze verify` clean, security exposure 2.9 OK. Not installed yet (`release.sh` does that)
@@ -29,7 +29,7 @@ Last checked 2026-11-04 (after Phase 4).
 - [x] Phase 4.7: release `b490f21` deployed by hand; live at https://fantasy-epl-gio.duckdns.org (Let's Encrypt cert, http → 308 redirect, security headers)
 - [x] Phase 4.8: login + every page's API 200; history import (4 seasons) ok; peak node RSS 134 MB, swap 146 MB, 0 restarts on `nano_3_0`; back by itself ~20 s after reboot
 - First attempt failed: `release.sh` was staged but not committed, so the tarball (built from `HEAD` by `git archive`) didn't contain it, `release.sh` wasn't found, and Caddy kept its default `:80` config (→ "refused to connect" on https). **Commit before building.**
-- [ ] Phase 5: `.github/workflows/ci.yml`. No `.github/` yet
+- [ ] Phase 5: `.github/workflows/ci.yml` written (app + Terraform jobs pass on a clean checkout); left: test PR, branch protection
 - [ ] Phase 6: `deploy.yml` + GitHub `production` environment
 - [ ] Phase 7: `infra/bootstrap/` (bucket, OIDC, roles) + state migration
 - [ ] Phase 8: Terraform plan/apply in CI
