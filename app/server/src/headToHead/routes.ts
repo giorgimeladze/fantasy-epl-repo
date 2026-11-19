@@ -1,6 +1,6 @@
 // /api/head-to-head
 import { Router } from 'express';
-import { requireAuth } from '../auth/requireAuth.js';
+import { requireAuth, teamOptions } from '../auth/requireAuth.js';
 import { forceRefresh, positiveInt } from '../utils/http.js';
 import { headToHeadService } from './headToHeadService.js';
 
@@ -10,7 +10,7 @@ headToHeadRoutes.use(requireAuth);
 
 // Each squad player's last matches against their next opponent, cached for 30 minutes.
 headToHeadRoutes.get('/', async (req, res) => {
-  res.json(await headToHeadService.getHeadToHead(forceRefresh(req)));
+  res.json(await headToHeadService.getHeadToHead(teamOptions(req, res)));
 });
 
 // Clubs and players for the scout picker.

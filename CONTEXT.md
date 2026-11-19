@@ -4,7 +4,7 @@ Background knowledge for working on this project.
 
 ## What this is
 
-A personal dashboard for one Fantasy Premier League (FPL) manager. A single admin logs in and sees their current 15-man squad with form, upcoming fixtures and how many points each player has earned for them this season.
+A personal dashboard for Fantasy Premier League (FPL) managers: the owner, plus optionally one friend. Each account is tied to one FPL team; a manager logs in and sees their current 15-man squad with form, upcoming fixtures and how many points each player has earned for them this season.
 
 ## FPL rules that matter here
 
@@ -122,8 +122,8 @@ Three layers on the server:
 
 ## Testing approach
 
-End-to-end Mocha specs under `app/server/test/`, calling the HTTP API through `api` from `test/setup.ts`. The FPL API is never called: MSW answers every request from `app/server/test/mockServer.ts`. The mock season (team `123456`) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `team.test.ts`. SQLite runs in-memory (see `app/server/src/config/testing.ts`).
+End-to-end Mocha specs under `app/server/test/`, calling the HTTP API through `api` from `test/setup.ts`. The FPL API is never called: MSW answers every request from `app/server/test/mockServer.ts`. The mock season (team `123456`; account 2's team `654321` reuses its squad under another name) has two gameweeks designed to exercise captaincy, an automatic substitution, a transfer, an injured player and an unscheduled fixture; expected "points for me" values are hand-calculated in `team.test.ts`. SQLite runs in-memory (see `app/server/src/config/testing.ts`).
 
 ## Security posture
 
-Deliberately minimal (personal tool): one admin account whose username and password come from the `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables, random bearer tokens held in server memory with an 8-hour TTL, stored in the browser's `sessionStorage`. Not suitable for multi-user or public deployment without replacing this.
+Deliberately minimal (personal tool): one or two accounts from environment variables (`ADMIN_USERNAME` / `ADMIN_PASSWORD` / `FPL_TEAM_ID`, optionally `ACCOUNT2_USERNAME` / `ACCOUNT2_PASSWORD` / `ACCOUNT2_FPL_TEAM_ID`), each seeing only its own team and draft plan; the session carries the account's team ID and every team endpoint uses it. Login checks every account in constant time. Sessions are random bearer tokens held in server memory with an 8-hour TTL, stored in the browser's `sessionStorage`. Not suitable for multi-user or public deployment without replacing this.

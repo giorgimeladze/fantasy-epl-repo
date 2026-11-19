@@ -3,9 +3,9 @@ import { config } from '../config/index.js';
 import type { CacheInfo } from '../team/models.js';
 import { getDatabase } from './database.js';
 
-/** What every team endpoint accepts: the team (default `config.fpl.teamId`) and `?refresh=true`. */
+/** What every team endpoint accepts: the logged-in account's team and `?refresh=true`. */
 export interface FetchOptions {
-  teamId?: number;
+  teamId: number;
   forceRefresh?: boolean;
 }
 
@@ -42,8 +42,8 @@ export async function cachedResponse<T extends object>(
 export function cachedEndpoint<T extends object>(
   name: string,
   build: (teamId: number, forceRefresh: boolean) => Promise<T>,
-): (options?: FetchOptions) => Promise<T & { cache: CacheInfo }> {
-  return ({ teamId = config.fpl.teamId, forceRefresh = false } = {}) =>
+): (options: FetchOptions) => Promise<T & { cache: CacheInfo }> {
+  return ({ teamId, forceRefresh = false }) =>
     cachedResponse(`${name}:${teamId}`, config.db.cacheTtlMs, forceRefresh, () => build(teamId, forceRefresh));
 }
 

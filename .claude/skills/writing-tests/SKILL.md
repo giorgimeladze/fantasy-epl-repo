@@ -23,7 +23,7 @@ Run with `npm test` (sets `NODE_ENV=test`). Specs live in `app/server/test/`, on
    });
    ```
    No `beforeEach` for login, mocks or cleanup — `setup.ts` does all of it.
-3. **`api` is already logged in** as the admin. For unauthenticated calls use `apiClient()`; for a bad token `apiClient('nope')`.
+3. **`api` is already logged in** as the admin (account 1, team `MOCK_TEAM_ID`); `friendApi` as account 2 (team `FRIEND_TEAM_ID`). For unauthenticated calls use `apiClient()`; for a bad token `apiClient('nope')`.
 4. **Every test starts clean:** empty database (all tables), default mock season, no recorded calls. Tests must not depend on each other's order.
 5. **Never hit the network.** MSW answers every FPL and past-season request from `test/mockServer.ts`; an endpoint that isn't mocked there returns 404.
 6. **Typed bodies:** response bodies are `any`, so name the type where you read one: `const players: PlayerView[] = (await api.team()).body.players;`.
@@ -38,7 +38,7 @@ Run with `npm test` (sets `NODE_ENV=test`). Specs live in `app/server/test/`, on
 | Edit bootstrap-static first | `const b = bootstrap(); …edit b…; fplReturns('/bootstrap-static/', b)` |
 | Check what was fetched | `fplCalls`, `historyCalls`; `resetCalls()` mid-test |
 | Back to defaults mid-test | `resetFplMock()` (also clears fplClient's memory cache) |
-| Pretend another team ID | `withTeamId(999, () => api.team())` |
+| Pretend another team ID | `withTeamId(999, (client) => client.team())` |
 | Expire caches | `withClockAhead(config.db.cacheTtlMs + 1000, () => api.team())` |
 
 ## Adding mock data

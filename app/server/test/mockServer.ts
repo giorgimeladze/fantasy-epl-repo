@@ -14,7 +14,9 @@ import { config } from '../src/config/index.js';
 import { fplClient } from '../src/fpl/fplClient.js';
 import type { FplBootstrap, FplElement, FplEntryHistory, FplFixture } from '../src/fpl/models.js';
 
-export const MOCK_TEAM_ID = config.fpl.teamId; // 123456, from src/config/testing.ts
+export const MOCK_TEAM_ID = config.auth.accounts[0]!.teamId; // 123456, from src/config/testing.ts
+/** Account 2's team: the same squad and history as 123456, under its own name. */
+export const FRIEND_TEAM_ID = config.auth.accounts[1]!.teamId; // 654321
 
 const FPL = config.fpl.baseUrl;
 const HISTORY = config.history.baseUrl;
@@ -184,6 +186,7 @@ const FIXTURES: FplFixture[] = [
 ];
 
 const ENTRY = { id: 123456, name: 'Mock Mid Table FC', player_first_name: 'Test', player_last_name: 'Manager', summary_overall_points: 134, summary_overall_rank: 250000, summary_event_points: 60, current_event: 2, started_event: 1 };
+const FRIEND_ENTRY = { ...ENTRY, id: FRIEND_TEAM_ID, name: 'Friendly Rivals XI', player_first_name: 'Second', player_last_name: 'Manager' };
 
 /** This season's matches per player id; players not listed have none. */
 const MATCHES: Record<number, object[]> = {
@@ -252,15 +255,23 @@ Some Manager,AM,Arsenal,0,0,0,0,0,777,0.00,0.00,101,0,0,2025-11-01T17:30:00Z,90,
 
 const notFound = () => HttpResponse.json({ detail: 'Not found.' }, { status: 404 });
 
+/** The four /entry/{id}/… endpoints of one manager. */
+function entryHandlers(teamId: number, entry: typeof ENTRY) {
+  return [
+    http.get(`${FPL}/entry/${teamId}/`, () => HttpResponse.json(entry)),
+    http.get(`${FPL}/entry/${teamId}/history/`, () => HttpResponse.json(entryHistory())),
+    http.get(`${FPL}/entry/${teamId}/transfers/`, () => HttpResponse.json(TRANSFERS.map((t) => ({ ...t, entry: teamId })))),
+    http.get(`${FPL}/entry/${teamId}/event/:gameweek/picks/`, ({ params }) => {
+      const gameweekPicks = PICKS[Number(params.gameweek)];
+      return gameweekPicks ? HttpResponse.json(gameweekPicks) : notFound();
+    }),
+  ];
+}
+
 export const mockServer = setupServer(
   http.get(`${FPL}/bootstrap-static/`, () => HttpResponse.json(bootstrap())),
-  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/`, () => HttpResponse.json(ENTRY)),
-  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/history/`, () => HttpResponse.json(entryHistory())),
-  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/transfers/`, () => HttpResponse.json(TRANSFERS)),
-  http.get(`${FPL}/entry/${MOCK_TEAM_ID}/event/:gameweek/picks/`, ({ params }) => {
-    const gameweekPicks = PICKS[Number(params.gameweek)];
-    return gameweekPicks ? HttpResponse.json(gameweekPicks) : notFound();
-  }),
+  ...entryHandlers(MOCK_TEAM_ID, ENTRY),
+  ...entryHandlers(FRIEND_TEAM_ID, FRIEND_ENTRY),
   http.get(`${FPL}/event/:gameweek/live/`, ({ params }) => {
     const gameweekLive = live(Number(params.gameweek));
     return gameweekLive ? HttpResponse.json(gameweekLive) : notFound();

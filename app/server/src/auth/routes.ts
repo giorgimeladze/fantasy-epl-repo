@@ -1,7 +1,7 @@
 // /api/auth
 import { Router } from 'express';
 import { authService } from './authService.js';
-import type { LoginRequest } from './models.js';
+import type { LoginRequest, Session, SessionResponse } from './models.js';
 import { HttpError } from '../utils/http.js';
 import { requireAuth } from './requireAuth.js';
 
@@ -19,7 +19,8 @@ authRoutes.post('/login', (req, res) => {
 });
 
 authRoutes.get('/session', requireAuth, (_req, res) => {
-  res.json({ username: res.locals.session.username });
+  const { username, teamId } = res.locals.session as Session;
+  res.json({ username, teamId } satisfies SessionResponse);
 });
 
 authRoutes.post('/logout', requireAuth, (_req, res) => {

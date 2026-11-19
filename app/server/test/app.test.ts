@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { api, apiClient, config, fplCalls } from './setup.js';
+import { api, apiClient, fplCalls, MOCK_TEAM_ID } from './setup.js';
 
 describe('API', () => {
   it('GET /api/health', async () => {
@@ -11,7 +11,7 @@ describe('API', () => {
   it('is logged in as the admin (see setup.ts)', async () => {
     const res = await api.session();
     assert.equal(res.status, 200);
-    assert.deepEqual(res.body, { username: config.auth.username });
+    assert.deepEqual(res.body, { username: 'admin', teamId: MOCK_TEAM_ID });
   });
 
   it('returns JSON 404 for unknown API routes', async () => {

@@ -72,15 +72,13 @@ export const config = {
   },
 
   auth: {
-    // Single admin account (personal tool, see CONTEXT.md).
-    username: env.adminUsername,
-    password: env.adminPassword,
+    // One or two accounts, each with its own FPL team (personal tool, see CONTEXT.md).
+    accounts: env.accounts,
     sessionTtlMs: 8 * HOUR,
   },
 
   fpl: {
     baseUrl: 'https://fantasy.premierleague.com/api',
-    teamId: env.fplTeamId,
     userAgent: 'Mozilla/5.0 (fantasy-epl dashboard)',
     liveCacheTtlMs: 2 * MINUTE,
     finishedGameweekCacheTtlMs: 24 * HOUR,

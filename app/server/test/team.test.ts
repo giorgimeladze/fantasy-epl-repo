@@ -173,13 +173,13 @@ describe('GET /api/team', () => {
 
   describe('errors', () => {
     it('returns 500 when no team ID is configured', async () => {
-      const res = await withTeamId(0, () => api.team());
+      const res = await withTeamId(0, (client) => client.team());
       assert.equal(res.status, 500);
       assert.match(res.body.error!, /FPL_TEAM_ID/);
     });
 
     it('returns 404 for an unknown FPL team', async () => {
-      const res = await withTeamId(999, () => api.team());
+      const res = await withTeamId(999, (client) => client.team());
       assert.equal(res.status, 404);
     });
 

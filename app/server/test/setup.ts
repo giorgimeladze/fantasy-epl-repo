@@ -16,16 +16,28 @@ assert.equal(config.environment, 'testing', 'Run the tests with `npm test`, whic
 
 export { config } from '../src/config/index.js';
 export { apiClient } from './helpers/namespace.js';
-export { bootstrap, fplCalls, fplFails, fplReturns, historyCalls, MOCK_TEAM_ID, resetCalls } from './mockServer.js';
+export {
+  bootstrap,
+  fplCalls,
+  fplFails,
+  fplReturns,
+  FRIEND_TEAM_ID,
+  historyCalls,
+  MOCK_TEAM_ID,
+  resetCalls,
+} from './mockServer.js';
 
-/** Every /api endpoint, already logged in as the admin. */
+/** Every /api endpoint, already logged in as the admin (account 1, team MOCK_TEAM_ID). */
 export let api = apiClient();
+/** Every /api endpoint, already logged in as the friend (account 2, team FRIEND_TEAM_ID). */
+export let friendApi = apiClient();
 
 // Root hooks: they run around every test in every spec.
 export const mochaHooks = {
   async beforeAll() {
     mockServer.listen({ onUnhandledFrame: 'bypass' }); // requests to our own app pass through
     api = apiClient(await login());
+    friendApi = apiClient(await login(config.auth.accounts[1]));
   },
 
   beforeEach() {
@@ -55,15 +67,18 @@ export function resetFplMock(): void {
   resetCalls();
 }
 
-/** Runs `call` as if FPL_TEAM_ID were `teamId`. */
-export async function withTeamId(teamId: number, call: () => Promise<Response>): Promise<Response> {
-  const fpl = config.fpl as { teamId: number };
-  const original = fpl.teamId;
-  fpl.teamId = teamId;
+/** Runs `call` with a client logged in to the admin account as if its FPL_TEAM_ID were `teamId`. */
+export async function withTeamId(
+  teamId: number,
+  call: (client: ReturnType<typeof apiClient>) => Promise<Response>,
+): Promise<Response> {
+  const account = config.auth.accounts[0]! as { teamId: number };
+  const original = account.teamId;
+  account.teamId = teamId;
   try {
-    return await call();
+    return await call(apiClient(await login()));
   } finally {
-    fpl.teamId = original;
+    account.teamId = original;
   }
 }
 

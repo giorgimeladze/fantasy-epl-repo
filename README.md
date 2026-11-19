@@ -49,6 +49,7 @@ FPL_TEAM_ID=1234567
 | `ADMIN_USERNAME` | – (required) | Dashboard login username |
 | `ADMIN_PASSWORD` | – (required) | Dashboard login password |
 | `FPL_TEAM_ID` | – (required) | Your FPL team |
+| `ACCOUNT2_USERNAME`, `ACCOUNT2_PASSWORD`, `ACCOUNT2_FPL_TEAM_ID` | – (optional, all three or none) | A second login with its own FPL team; each account sees only its own team and draft plan |
 | `PORT` | `3001` | API port |
 | `DATABASE_PATH` | `app/server/data/fpl.sqlite` | SQLite file. It is created automatically on first run. |
 
@@ -156,6 +157,7 @@ The past-season mocks (also in `test/mockServer.ts`) cover 2023-24 to 2025-26; 2
 | --- | --- |
 | "ADMIN_USERNAME and ADMIN_PASSWORD must be set" on startup | Add both to `.env` |
 | "FPL_TEAM_ID is not configured" | Set `FPL_TEAM_ID` in `.env` and restart `npm run dev` |
+| "Set all of ACCOUNT2_USERNAME, …" on startup | Set all three `ACCOUNT2_*` variables, or remove them all |
 | "FPL resource not found: /entry/…" | The team ID is wrong |
 | "The FPL API is updating" (503) | FPL is processing a gameweek. Try again in a few minutes. |
 | `EADDRINUSE` on 3001 or 5173 | Another process is using the port. Stop it or set `PORT` (if you change `PORT`, also update the proxy in `app/client/vite.config.ts`). |

@@ -115,13 +115,24 @@ jobs:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           FPL_TEAM_ID: ${{ secrets.FPL_TEAM_ID }}
+          # Optional second account (docs/tasks/second-account.md): all three secrets or none.
+          ACCOUNT2_USERNAME: ${{ secrets.ACCOUNT2_USERNAME }}
+          ACCOUNT2_PASSWORD: ${{ secrets.ACCOUNT2_PASSWORD }}
+          ACCOUNT2_FPL_TEAM_ID: ${{ secrets.ACCOUNT2_FPL_TEAM_ID }}
         run: |
-          for v in "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID"; do
+          for v in "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID" \
+            "$ACCOUNT2_USERNAME" "$ACCOUNT2_PASSWORD" "$ACCOUNT2_FPL_TEAM_ID"; do
             case "$v" in *$'\n'*) echo "A production secret contains a newline" >&2; exit 1 ;; esac
           done
-          printf 'NODE_ENV=production\nPORT=3001\nDATABASE_PATH=/var/lib/fantasy-epl/fpl.sqlite\nADMIN_USERNAME=%s\nADMIN_PASSWORD=%s\nFPL_TEAM_ID=%s\n' \
-            "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID" \
-            | ssh prod 'umask 077 && cat > /tmp/fantasy-epl.env'
+          {
+            printf 'NODE_ENV=production\nPORT=3001\nDATABASE_PATH=/var/lib/fantasy-epl/fpl.sqlite\n'
+            printf 'ADMIN_USERNAME=%s\nADMIN_PASSWORD=%s\nFPL_TEAM_ID=%s\n' "$ADMIN_USERNAME" "$ADMIN_PASSWORD" "$FPL_TEAM_ID"
+            # Any one set writes all three, so a half-set account stops the server (and the deploy rolls back).
+            if [ -n "$ACCOUNT2_USERNAME$ACCOUNT2_PASSWORD$ACCOUNT2_FPL_TEAM_ID" ]; then
+              printf 'ACCOUNT2_USERNAME=%s\nACCOUNT2_PASSWORD=%s\nACCOUNT2_FPL_TEAM_ID=%s\n' \
+                "$ACCOUNT2_USERNAME" "$ACCOUNT2_PASSWORD" "$ACCOUNT2_FPL_TEAM_ID"
+            fi
+          } | ssh prod 'umask 077 && cat > /tmp/fantasy-epl.env'
           ssh prod "bash /opt/fantasy-epl/releases/$SHA/deploy/release.sh $SHA $DOMAIN /tmp/fantasy-epl.env"
 
       - name: Health check over HTTPS
