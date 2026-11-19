@@ -80,9 +80,9 @@ export const projectionService = {
    * such as transfers. FPL responses still come from fplClient's memory cache.
    */
   async getLeagueProjections({
-    teamId = config.fpl.teamId,
+    teamId,
     forceRefresh = false,
-  }: FetchOptions = {}): Promise<{ gameweeks: number[]; players: Map<number, PlayerProjection> }> {
+  }: FetchOptions): Promise<{ gameweeks: number[]; players: Map<number, PlayerProjection> }> {
     const { gameweeks, projections } = await projectLeague(teamId, forceRefresh);
     return { gameweeks, players: projections };
   },

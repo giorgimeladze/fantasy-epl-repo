@@ -11,7 +11,9 @@ const app = createApp();
 
 app.listen(config.port, () => {
   console.log(`API listening on http://localhost:${config.port}`);
-  if (!config.fpl.teamId) {
-    console.warn('FPL_TEAM_ID is not set — /api/team will fail until it is configured.');
+  for (const account of config.auth.accounts) {
+    if (!account.teamId) {
+      console.warn(`No FPL team ID for "${account.username}" (FPL_TEAM_ID) — /api/team will fail until it is set.`);
+    }
   }
 });

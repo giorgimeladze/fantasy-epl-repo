@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import type { Account } from '../config/accounts.js';
 import { config } from '../config/index.js';
 import type { LoginResponse, Session } from './models.js';
 
@@ -18,25 +19,32 @@ function pruneExpired(now: number): void {
 }
 
 export const authService = {
+  /** Every account has a username and a password. */
   isConfigured(): boolean {
-    return config.auth.username !== '' && config.auth.password !== '';
+    const accounts: readonly Account[] = config.auth.accounts;
+    return accounts.length > 0 && accounts.every((a) => a.username !== '' && a.password !== '');
   },
 
   login(username: string, password: string): LoginResponse | null {
     // Without this, empty credentials would match an unconfigured (empty) account.
     if (!authService.isConfigured()) return null;
 
-    const validUser = safeEqual(username, config.auth.username);
-    const validPassword = safeEqual(password, config.auth.password);
-    if (!validUser || !validPassword) return null;
+    // Checks every account, without stopping at a match, so timing doesn't reveal which usernames exist.
+    let account: Account | null = null;
+    for (const candidate of config.auth.accounts) {
+      const validUser = safeEqual(username, candidate.username);
+      const validPassword = safeEqual(password, candidate.password);
+      if (validUser && validPassword && !account) account = candidate;
+    }
+    if (!account) return null;
 
     const now = Date.now();
     pruneExpired(now);
 
     const token = randomBytes(32).toString('hex');
     const expiresAt = now + config.auth.sessionTtlMs;
-    sessions.set(token, { username, expiresAt });
-    return { token, username, expiresAt: new Date(expiresAt).toISOString() };
+    sessions.set(token, { username: account.username, teamId: account.teamId, expiresAt });
+    return { token, username: account.username, teamId: account.teamId, expiresAt: new Date(expiresAt).toISOString() };
   },
 
   getSession(token: string): Session | null {

@@ -125,7 +125,7 @@ function parseTransfers(body: unknown): PlannedTransfer[] {
 
 export const draftService = {
   /** The saved draft plan, replayed on today's predictions. Moves for past gameweeks are dropped. */
-  async getDraft(teamId: number = config.fpl.teamId): Promise<DraftPlanResponse> {
+  async getDraft(teamId: number): Promise<DraftPlanResponse> {
     const context = await loadDecisionContext(teamId, false);
     const saved = draftRepository.get(teamId);
     const transfers = saved?.transfers ?? [];
@@ -136,7 +136,7 @@ export const draftService = {
   },
 
   /** Replaces the draft plan. Rejects (400) a plan that breaks a rule, naming the first problem. */
-  async saveDraft(body: unknown, teamId: number = config.fpl.teamId): Promise<DraftPlanResponse> {
+  async saveDraft(body: unknown, teamId: number): Promise<DraftPlanResponse> {
     const transfers = parseTransfers(body);
     const context = await loadDecisionContext(teamId, false);
     const { problems } = simulate(context, transfers);
@@ -145,7 +145,7 @@ export const draftService = {
     return buildDraft(context, transfers, updatedAt);
   },
 
-  async clearDraft(teamId: number = config.fpl.teamId): Promise<DraftPlanResponse> {
+  async clearDraft(teamId: number): Promise<DraftPlanResponse> {
     draftRepository.clear(teamId);
     return buildDraft(await loadDecisionContext(teamId, false), [], null);
   },

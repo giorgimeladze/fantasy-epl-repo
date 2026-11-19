@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import request, { type Test } from 'supertest';
 import { createApp } from '../../src/app.js';
+import type { Account } from '../../src/config/accounts.js';
 import { config } from '../../src/config/index.js';
 
 // Listening on 127.0.0.1 explicitly. supertest's default (a random port on every interface) can be handed a port
@@ -13,11 +14,11 @@ export function closeApp(): Promise<void> {
   return new Promise((resolve, reject) => app.close((err) => (err ? reject(err) : resolve())));
 }
 
-/** Logs in as the admin (the only user) and returns the session token. */
-export async function login(): Promise<string> {
+/** Logs in as `account` (default: account 1, the admin) and returns the session token. */
+export async function login(account: Account = config.auth.accounts[0]!): Promise<string> {
   const res = await request(app)
     .post('/api/auth/login')
-    .send({ username: config.auth.username, password: config.auth.password });
+    .send({ username: account.username, password: account.password });
   assert.equal(res.status, 200, `login failed: ${res.body.error}`);
   return res.body.token;
 }
@@ -37,6 +38,7 @@ export function apiClient(token?: string) {
     get: (path: string) => get(path),
 
     health: () => get('/health'),
+    login: (username: string, password: string) => request(app).post('/api/auth/login').send({ username, password }),
     session: () => get('/auth/session'),
     logout: () => withToken(request(app).post('/api/auth/logout')),
 

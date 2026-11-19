@@ -65,6 +65,7 @@ The SQLite database lives on a **separate Lightsail disk** mounted at `/var/lib/
 | Variable | Stored in | Notes |
 | --- | --- | --- |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `FPL_TEAM_ID` | GitHub environment **`production`** → *secrets* | Written to `/etc/fantasy-epl/env` on every deploy. To change one: edit the secret, then re-run the deploy. |
+| `ACCOUNT2_USERNAME`, `ACCOUNT2_PASSWORD`, `ACCOUNT2_FPL_TEAM_ID` | GitHub environment `production` → *secrets* (optional) | Second account ([second-account.md](../tasks/second-account.md)). All three or none. |
 | `PORT`, `DATABASE_PATH` | Fixed in the workflow (`3001`, `/var/lib/fantasy-epl/fpl.sqlite`) | Not secret |
 | `DEPLOY_SSH_KEY` | GitHub environment `production` → secret | Private half of the deploy key. Terraform only gets the public half. |
 | `AWS_ROLE_ARN`, `DOMAIN` | GitHub environment `production` → *variables* | Not secret |
