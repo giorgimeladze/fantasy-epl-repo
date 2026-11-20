@@ -26,24 +26,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
-      name: production
-      url: https://${{ vars.DOMAIN }}
+      name: production      url: https://fantasy-epl-gio.duckdns.org
     env:
       SHA: ${{ github.sha }}
-      DOMAIN: ${{ vars.DOMAIN }}
+      DEPLOY_HOST: 13.61.248.179
+      DOMAIN: fantasy-epl-gio.duckdns.org
     steps:
-      # A missing variable or secret reaches the job as "", so name each missing one up front.
-      - name: Check production settings
+      # A missing secret reaches the job as "", so name each missing one up front.
+      - name: Check production secrets
         env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          SSH_KNOWN_HOSTS: ${{ vars.SSH_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
+          # FPL_TEAM_ID is left out on purpose: deleting it is how the rollback is tested (roadmap Phase 6).
           missing=0
-          for name in DEPLOY_HOST DOMAIN SSH_KNOWN_HOSTS DEPLOY_SSH_KEY ADMIN_USERNAME ADMIN_PASSWORD; do
-            if [ -z "${!name}" ]; then echo "::error::$name is empty: add it to the 'production' environment"; missing=1; fi
+          for name in DEPLOY_SSH_KEY ADMIN_USERNAME ADMIN_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is empty: add it to the 'production' environment"; missing=1; fi
           done
           exit $missing
 
@@ -69,14 +68,11 @@ jobs:
       - name: Set up SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          SSH_KNOWN_HOSTS: ${{ vars.SSH_KNOWN_HOSTS }}
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          # Pinned host key: an unknown or changed key stops the deploy.
+          cp deploy/known_hosts ~/.ssh/known_hosts
           cat > ~/.ssh/config <<EOF
           Host prod
             HostName $DEPLOY_HOST

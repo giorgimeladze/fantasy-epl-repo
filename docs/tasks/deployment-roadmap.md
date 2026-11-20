@@ -30,6 +30,7 @@ Last checked 2026-11-18 (after Phase 5).
 - [x] Phase 4.8: login + every page's API 200; history import (4 seasons) ok; peak node RSS 134 MB, swap 146 MB, 0 restarts on `nano_3_0`; back by itself ~20 s after reboot
 - First attempt failed: `release.sh` was staged but not committed, so the tarball (built from `HEAD` by `git archive`) didn't contain it, `release.sh` wasn't found, and Caddy kept its default `:80` config (→ "refused to connect" on https). **Commit before building.**
 - [x] Phase 5: `.github/workflows/ci.yml` (jobs `App (lint, typecheck, test, build)`, `Terraform (fmt, validate)`), green on PR #1 (merged). Ruleset `master` active: PR required, both checks required, no force push, no deletion. **From now on every change to `master` goes through a PR.**
+- **2026-11-20:** Phase 6 failed because `vars.*` reached the job empty (secrets worked; cause unknown). `DEPLOY_HOST` and `DOMAIN` now sit in `deploy.yml`, the host key in `deploy/known_hosts` (fingerprint checked against the server), so the workflow uses no GitHub variables. Until it runs green, deploy by hand with [manual-deploy.md](manual-deploy.md).
 - [ ] Phase 6: `deploy.yml` written; `release.sh` takes the env file as 3rd arg and restores it on rollback. Left: `production` environment, merge, rollback test
 - [ ] Phase 7: `infra/bootstrap/` (bucket, OIDC, roles) + state migration
 - [ ] Phase 8: Terraform plan/apply in CI
@@ -184,11 +185,9 @@ Done when a PR shows green checks, and a broken one can't be merged.
    | --- | --- | --- |
    | Secret | `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `FPL_TEAM_ID` | the production values |
    | Secret | `DEPLOY_SSH_KEY` | contents of `~/.ssh/fantasy-epl` (the private key) |
-   | Variable | `DEPLOY_HOST` | `13.61.248.179` |
-   | Variable | `DOMAIN` | `<name>.duckdns.org` |
-   | Variable | `SSH_KNOWN_HOSTS` | output of `ssh-keyscan -t ed25519 13.61.248.179` |
+   | Secret (optional) | `ACCOUNT2_USERNAME`, `ACCOUNT2_PASSWORD`, `ACCOUNT2_FPL_TEAM_ID` | the second account, all three or none |
 
-   Pinning the host key means GitHub refuses to deploy to an impostor. **Update it whenever the instance is rebuilt.** Check it before saving: the fingerprint of `ssh-keyscan` output (`ssh-keygen -lf`) must match `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` run on the server.
+   No GitHub *variables*: they reached the job empty. The non-secret values live in the repo instead: `DEPLOY_HOST` and `DOMAIN` in `deploy.yml`'s job `env`, and the pinned host key in `deploy/known_hosts`. Pinning means GitHub refuses to deploy to an impostor. **Update all three whenever the instance is rebuilt.** To refresh the key: `ssh-keyscan -t ed25519 <ip> > deploy/known_hosts`, then check that `ssh-keygen -lf deploy/known_hosts` matches `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` run on the server.
 
    Environment settings: **Deployment branches → Selected branches → `master`**, so no other branch gets these secrets. Secrets must be one line, without quotes or backslashes (systemd's `EnvironmentFile` interprets those).
 2. **`.github/workflows/deploy.yml`:**
@@ -197,7 +196,7 @@ Done when a PR shows green checks, and a broken one can't be merged.
    - Job `check`: `uses: ./.github/workflows/ci.yml`
    - Job `deploy`, with `needs: check` and `environment: production`:
      1. Build the tarball as in Phase 4.5.
-     2. Write the SSH key, `known_hosts` and an `ssh` host alias `prod` (`StrictHostKeyChecking yes`).
+     2. Write the SSH key, copy `deploy/known_hosts`, and add an `ssh` host alias `prod` (`StrictHostKeyChecking yes`).
      3. `scp` the tarball; unpack into `releases/.<sha>.tmp`, then rename to `releases/<sha>` (skipped when it already exists, i.e. a re-deploy).
      4. Build the env file from secrets (passed as step `env:`, never in the command text) and pipe it over `ssh` to `/tmp/fantasy-epl.env` (mode 600).
      5. Run `release.sh <sha> <domain> /tmp/fantasy-epl.env`: it installs the env file (old one kept as `env.prev`), activates, and on a failed health check restores both the previous release and the previous env file.
@@ -232,9 +231,9 @@ Done when both stacks keep their state in S3, the laptop has no state files, and
 2. **`deploy.yml`:** an `infra` job between `check` and `deploy`:
    - `environment: production`, `permissions: id-token: write`
    - log in with `AWS_ROLE_ARN` → `init` → `plan -out=tfplan` → `apply tfplan`. With no changes it does nothing.
-   - Optional: read `terraform output -raw static_ip` and pass it to `deploy` instead of the `DEPLOY_HOST` variable.
+   - Optional: read `terraform output -raw static_ip` and pass it to `deploy` instead of the hard-coded `DEPLOY_HOST`.
 3. Test: a PR that changes something harmless (e.g. a tag) shows a plan comment; merging applies it; the next run says no changes.
-4. **Rebuilds:** if a PR's plan shows the instance `must be replaced`, the server is rebuilt and the database is lost (unless restored from a snapshot or a Phase 9 data disk). After merging such a PR, update `SSH_KNOWN_HOSTS` before the deploy runs.
+4. **Rebuilds:** if a PR's plan shows the instance `must be replaced`, the server is rebuilt and the database is lost (unless restored from a snapshot or a Phase 9 data disk). The same PR must update `deploy/known_hosts`, `DEPLOY_HOST` and `DOMAIN` in `deploy.yml`, or the deploy refuses the new host key.
 
 Done when changing `infra/` and merging updates AWS, with the plan reviewed on the PR first.
 

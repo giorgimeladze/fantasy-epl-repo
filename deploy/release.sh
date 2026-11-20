@@ -48,7 +48,7 @@ fi
 sudo systemctl enable --quiet fantasy-epl
 
 # 2. Caddyfile, with the domain filled in; validated before Caddy sees it.
-sed"s/DOMAIN_PLACEHOLDER/$DOMAIN/" "$RELEASE/deploy/Caddyfile" > "$caddyfile"
+sed "s/DOMAIN_PLACEHOLDER/$DOMAIN/" "$RELEASE/deploy/Caddyfile" > "$caddyfile"
 if ! cmp -s "$caddyfile" /etc/caddy/Caddyfile; then
   log "Installing Caddyfile for $DOMAIN"
   caddy validate --adapter caddyfile --config "$caddyfile" > /dev/null 2>&1 \
