@@ -26,7 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
-      name: production      url: https://fantasy-epl-gio.duckdns.org
+      name: production
+      url: https://fantasy-epl-gio.duckdns.org
     env:
       SHA: ${{ github.sha }}
       DEPLOY_HOST: 13.61.248.179
